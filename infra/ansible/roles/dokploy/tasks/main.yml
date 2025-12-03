@@ -6,13 +6,9 @@
     owner: root
     group: root
 
-- name: Install Dokploy
-  command: >
-    docker run -d --restart unless-stopped --name dokploy
-    -p 3000:3000
-    -v /var/run/docker.sock:/var/run/docker.sock
-    -v /etc/dokploy:/etc/dokploy
-    dokploy/dokploy:latest
+- name: Install Dokploy Platform
+  shell: |
+    set -euo pipefail && curl -sSL https://dokploy.com/install.sh | sh
   args:
-    creates: /etc/dokploy/db
-  register: dokploy_install
+    creates: /etc/dokploy/docker-compose.yml
+    executable: /bin/bash

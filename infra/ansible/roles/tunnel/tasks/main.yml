@@ -4,13 +4,31 @@
     dest: /usr/local/bin/cloudflared
     mode: '0755'
 
-- name: Install Tunnel Service
-  command: cloudflared service install {{ tunnel_token }}
-  args:
-    creates: /etc/systemd/system/cloudflared.service
+- name: Create Cloudflared Service File
+  copy:
+    dest: /etc/systemd/system/cloudflared.service
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=cloudflared
+      After=network.target
+
+      [Service]
+      TimeoutStartSec=0
+      Type=notify
+      ExecStart=/usr/local/bin/cloudflared tunnel run --token {{ tunnel_token }}
+      Restart=on-failure
+      RestartSec=5s
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload Systemd Daemon
+  systemd:
+    daemon_reload: true
 
 - name: Start Tunnel Service
   service:
     name: cloudflared
-    state: started
+    state: restarted  # Restart to ensure new config applies
     enabled: true
