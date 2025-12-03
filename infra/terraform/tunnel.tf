@@ -16,12 +16,16 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
 
   config {
     ingress_rule {
+      hostname = "dokploy.${var.domain}"
+      service  = "http://127.0.0.1:3000"
+    }
+    ingress_rule {
       hostname = "*.${var.domain}"
-      service  = "http://localhost:80"
+      service  = "http://127.0.0.1:80"
     }
     ingress_rule {
       hostname = var.domain
-      service  = "http://localhost:80"
+      service  = "http://127.0.0.1:80"
     }
     ingress_rule {
       service = "http_status:404"
