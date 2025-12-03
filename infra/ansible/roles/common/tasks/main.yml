@@ -1,0 +1,26 @@
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install basics
+  apt:
+    name: ['curl', 'git', 'ufw', 'fail2ban', 'unattended-upgrades']
+    state: present
+
+- name: Configure UFW (Firewall)
+  ufw:
+    state: enabled
+    policy: deny
+
+- name: Allow SSH
+  ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Secure SSH (Disable Root Login)
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin no'
+  notify: Restart SSH  # <--- This looks for the handler we just moved

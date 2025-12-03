@@ -1,0 +1,11 @@
+- name: Provision DevSecOps Server
+  hosts: dokploy_servers
+  become: true
+  vars_files:
+    - host_vars/tunnel_secret.yml # Created by Terraform
+  roles:
+    - common
+    - docker
+    - dokploy
+    - monitoring
+    - tunnel

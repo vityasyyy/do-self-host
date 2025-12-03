@@ -1,0 +1,18 @@
+- name: Create Dokploy Directory
+  file:
+    path: /etc/dokploy
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Install Dokploy
+  command: >
+    docker run -d --restart unless-stopped --name dokploy
+    -p 3000:3000
+    -v /var/run/docker.sock:/var/run/docker.sock
+    -v /etc/dokploy:/etc/dokploy
+    dokploy/dokploy:latest
+  args:
+    creates: /etc/dokploy/db
+  register: dokploy_install

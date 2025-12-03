@@ -1,0 +1,4 @@
+- name: Install Docker
+  shell: set -euo pipefail && curl -fsSL https://get.docker.com | sh
+  args:
+    creates: /usr/bin/docker
