@@ -29,7 +29,7 @@ variable "region" {
 
 variable "size" {
   type    = string
-  default = "s-1vcpu-1gb"
+  default = "s-2vcpu-2gb"
 }
 
 variable "ssh_pub_path" {

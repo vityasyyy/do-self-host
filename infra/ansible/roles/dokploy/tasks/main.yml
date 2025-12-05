@@ -1,3 +1,9 @@
+- name: Check if Dokploy is already running
+  command: docker ps -q -f name=dokploy
+  register: dokploy_container
+  changed_when: false
+  failed_when: false
+
 - name: Create Dokploy Directory
   file:
     path: /etc/dokploy
@@ -12,3 +18,5 @@
   args:
     creates: /etc/dokploy/docker-compose.yml
     executable: /bin/bash
+  # Only run if the config file is missing AND the container is not running
+  when: dokploy_container.stdout | length == 0

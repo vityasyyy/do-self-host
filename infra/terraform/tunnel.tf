@@ -9,7 +9,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared" "main" {
   secret     = base64sha256(random_id.tunnel_secret.hex)
 }
 
-# NEW NAME: cloudflare_zero_trust_tunnel_cloudflared_config
+# prepare zero trust tunnnel
 resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
   account_id = var.cloudflare_account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.main.id
