@@ -39,7 +39,7 @@ services:
       - "traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN}`)"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 
-  # 3. Node Exporter (Server Metrics - CPU, RAM, Disk)
+  # 3. Noode Exporter (Server Metrics - CPU, RAM, Disk)
   node-exporter:
     image: prom/node-exporter:latest
     container_name: monitoring-node-exporter
