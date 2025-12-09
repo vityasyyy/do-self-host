@@ -20,6 +20,10 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
       service  = "http://127.0.0.1:3000"
     }
     ingress_rule {
+      hostname = "traefik.${var.domain}"
+      service  = "http://127.0.0.1:8080"
+    }
+    ingress_rule {
       hostname = "*.${var.domain}"
       service  = "http://127.0.0.1:80"
     }
@@ -57,15 +61,84 @@ resource "cloudflare_zero_trust_access_application" "dokploy" {
   type             = "self_hosted" # Required in new version
 }
 
-resource "cloudflare_zero_trust_access_policy" "admin_only" {
-  application_id = cloudflare_zero_trust_access_application.dokploy.id
-  zone_id        = var.cloudflare_zone_id
-  name           = "Admins Only"
-  decision       = "allow"
-  precedence     = 1 # <--- REQUIRED now
+resource "cloudflare_zero_trust_access_application" "grafana" {
+  zone_id          = var.cloudflare_zone_id
+  name             = "Grafana"
+  domain           = "grafana.${var.domain}"
+  session_duration = "24h"
+  type             = "self_hosted" # Required in new version
+}
+
+resource "cloudflare_zero_trust_access_application" "prometheus" {
+  zone_id          = var.cloudflare_zone_id
+  name             = "Prometheus"
+  domain           = "prometheus.${var.domain}"
+  session_duration = "24h"
+  type             = "self_hosted" # Required in new version
+}
+
+resource "cloudflare_zero_trust_access_application" "traefik" {
+  zone_id          = var.cloudflare_zone_id
+  name             = "Traefik Dashboard"
+  domain           = "traefik.${var.domain}"
+  session_duration = "24h"
+  type             = "self_hosted" # Required in new version
+}
+
+resource "cloudflare_zero_trust_access_group" "admins" {
+  name    = "My Admins"
+  zone_id = var.cloudflare_zone_id
 
   include {
     email = [var.admin_email]
+  }
+}
+
+resource "cloudflare_zero_trust_access_policy" "dokploy_admin" {
+  application_id = cloudflare_zero_trust_access_application.dokploy.id
+  zone_id        = var.cloudflare_zone_id
+  name           = "Dokploy Admin"
+  decision       = "allow"
+  precedence     = 1
+
+  include {
+    group = [cloudflare_zero_trust_access_group.admins.id]
+  }
+}
+
+resource "cloudflare_zero_trust_access_policy" "grafana_admin" {
+  application_id = cloudflare_zero_trust_access_application.grafana.id
+  zone_id        = var.cloudflare_zone_id
+  name           = "Grafana Admin"
+  decision       = "allow"
+  precedence     = 1
+
+  include {
+    group = [cloudflare_zero_trust_access_group.admins.id]
+  }
+}
+
+resource "cloudflare_zero_trust_access_policy" "prometheus_admin" {
+  application_id = cloudflare_zero_trust_access_application.prometheus.id
+  zone_id        = var.cloudflare_zone_id
+  name           = "Prometheus Admin"
+  decision       = "allow"
+  precedence     = 1
+
+  include {
+    group = [cloudflare_zero_trust_access_group.admins.id]
+  }
+}
+
+resource "cloudflare_zero_trust_access_policy" "traefik_admin" {
+  application_id = cloudflare_zero_trust_access_application.traefik.id
+  zone_id        = var.cloudflare_zone_id
+  name           = "Traefik Admin"
+  decision       = "allow"
+  precedence     = 1
+
+  include {
+    group = [cloudflare_zero_trust_access_group.admins.id]
   }
 }
 
