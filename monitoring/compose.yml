@@ -17,7 +17,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.prometheus.rule=Host(`prometheus.${DOMAIN}`)"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
-      - "traefik.http.routers.prometheus.middlewares=dokploy-auth-basic" # Optional: Protects with Dokploy password
+      # - "traefik.http.routers.prometheus.middlewares=dokploy-auth-basic" # Optional: Protects with Dokploy password
 
   # 2. Grafana (The Dashboard)
   grafana:
@@ -86,7 +86,7 @@ services:
       - "traefik.http.routers.dozzle.rule=Host(`logs.${DOMAIN}`)"
       - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
       # HIGHLY RECOMMENDED: Protect logs with a password since they show sensitive info
-      - "traefik.http.routers.dozzle.middlewares=dokploy-auth-basic"
+      # - "traefik.http.routers.dozzle.middlewares=dokploy-auth-basic"
 
 networks:
   dokploy-network:
