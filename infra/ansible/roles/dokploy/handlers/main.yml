@@ -1,0 +1,4 @@
+- name: Restart Traefik
+  docker_container:
+    name: dokploy-traefik
+    restart: true

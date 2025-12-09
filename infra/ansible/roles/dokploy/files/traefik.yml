@@ -1,0 +1,34 @@
+global:
+  sendAnonymousUsage: false
+
+providers:
+  docker:
+    exposedByDefault: false
+    watch: true
+    network: dokploy-network
+  file:
+    directory: /etc/dokploy/traefik/dynamic
+    watch: true
+
+api:
+  dashboard: true
+  insecure: true # This opens the dashboard on Port 8080 (Internal Only)
+
+metrics:
+  prometheus:
+    # We create a dedicated entrypoint for metrics so they don't mix with public traffic
+    entryPoint: metrics
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+
+entryPoints:
+  web:
+    address: :80
+    forwardedHeaders:
+      insecure: true
+  websecure:
+    address: :443
+  # New EntryPoint for Metrics
+  metrics:
+    address: :8082
