@@ -2,7 +2,7 @@
   hosts: dokploy_servers
   become: true
   vars_files:
-    - host_vars/tunnel_secret.yml # Created by Terraform
+    - host_vars/tunnel_secret.yml
   roles:
     - common
     - docker
