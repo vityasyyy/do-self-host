@@ -25,6 +25,8 @@ services:
     container_name: monitoring-grafana
     restart: unless-stopped
     volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
       - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
@@ -55,7 +57,7 @@ services:
 
   # 4. cAdvisor (Docker Container Metrics)
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
     container_name: monitoring-cadvisor
     restart: unless-stopped
     privileged: true
@@ -67,26 +69,27 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     networks:
       - dokploy-network
 
-  # 5. Dozzle (Lightweight Logs Viewer)
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: monitoring-dozzle
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      DOZZLE_LEVEL: info
-    networks:
-      - dokploy-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dozzle.rule=Host(`logs.${DOMAIN}`)"
-      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
-      # HIGHLY RECOMMENDED: Protect logs with a password since they show sensitive info
-      # - "traefik.http.routers.dozzle.middlewares=dokploy-auth-basic"
+  # # 5. Dozzle (Lightweight Logs Viewer)
+  # dozzle:
+  #   image: amir20/dozzle:latest
+  #   container_name: monitoring-dozzle
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   environment:
+  #     DOZZLE_LEVEL: info
+  #   networks:
+  #     - dokploy-network
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.dozzle.rule=Host(`logs.${DOMAIN}`)"
+  #     - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+  #     # HIGHLY RECOMMENDED: Protect logs with a password since they show sensitive info
+  #     # - "traefik.http.routers.dozzle.middlewares=dokploy-auth-basic"
 
 networks:
   dokploy-network:

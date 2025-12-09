@@ -17,4 +17,4 @@ scrape_configs:
   # Dokploy Traefik Metrics (Optional, if you enabled metrics in Traefik)
   - job_name: "traefik"
     static_configs:
-      - targets: ["traefik:8082"]
+      - targets: ["dokploy-traefik-1:8082"]
