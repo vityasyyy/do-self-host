@@ -7,7 +7,6 @@ terraform {
     region                      = "us-east-1" # Leave as us-east-1 (Required for DO Spaces compatibility)
     skip_credentials_validation = true
     skip_metadata_api_check     = true
-    skip_requesting_account_id  = true
     skip_region_validation      = true
   }
   required_providers {
