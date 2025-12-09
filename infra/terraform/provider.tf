@@ -1,14 +1,13 @@
 terraform {
   required_version = ">= 1.5.0"
   backend "s3" {
-    endpoint                    = "sgp1.digitaloceanspaces.com"
+    endpoints                   = { s3 = "https://sgp1.digitaloceanspaces.com" }
     bucket                      = "vityasy-bucket" # REPLACE with your actual bucket name
     key                         = "terraform.tfstate"
     region                      = "us-east-1" # Leave as us-east-1 (Required for DO Spaces compatibility)
     skip_credentials_validation = true
     skip_metadata_api_check     = true
     skip_requesting_account_id  = true
-    skip_s3_checksum            = true
     skip_region_validation      = true
   }
   required_providers {
@@ -18,7 +17,7 @@ terraform {
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
-      version = "~> 4.0"
+      version = "~> 5.0"
     }
     random = {
       source  = "hashicorp/random"
