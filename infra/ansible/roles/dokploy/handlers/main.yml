@@ -1,4 +1,4 @@
 - name: Restart Traefik
-  docker_container:
+  community.docker.docker_container:  # <--- Fixed
     name: dokploy-traefik
     restart: true

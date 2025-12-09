@@ -1,65 +1,68 @@
 # --- SWAP SETUP ---
 - name: Check if swap file exists
-  stat:
+  ansible.builtin.stat:             # <--- Fixed
     path: /swapfile
-  register: swap_file
+  register: common_swap_file        # <--- Renamed variable
 
 - name: Create swap file
-  command: dd if=/dev/zero of=/swapfile bs=1M count=2048
+  ansible.builtin.command:          # <--- Fixed
+    cmd: dd if=/dev/zero of=/swapfile bs=1M count=2048
   args:
-    creates: /swapfile  # <--- Fix: Tells Ansible "Skip if this file exists"
-  when: not swap_file.stat.exists
+    creates: /swapfile
+  when: not common_swap_file.stat.exists  # <--- Updated variable reference
 
 - name: Set permissions on swap file
-  file:
+  ansible.builtin.file:             # <--- Fixed
     path: /swapfile
     owner: root
     group: root
     mode: '0600'
-  when: not swap_file.stat.exists
+  when: not common_swap_file.stat.exists  # <--- Updated variable reference
 
 - name: Format swap file
-  command: mkswap /swapfile
-  changed_when: true    # <--- Fix: Tells Ansible "If this runs, it counts as a change"
-  when: not swap_file.stat.exists
+  ansible.builtin.command:          # <--- Fixed
+    cmd: mkswap /swapfile
+  changed_when: true
+  when: not common_swap_file.stat.exists  # <--- Updated variable reference
 
 - name: Enable swap file
-  command: swapon /swapfile
-  changed_when: true    # <--- Fix: Tells Ansible "If this runs, it counts as a change"
-  when: not swap_file.stat.exists
+  ansible.builtin.command:          # <--- Fixed
+    cmd: swapon /swapfile
+  changed_when: true
+  when: not common_swap_file.stat.exists  # <--- Updated variable reference
 
 - name: Add swap to fstab
-  lineinfile:
+  ansible.builtin.lineinfile:       # <--- Fixed
     path: /etc/fstab
     line: '/swapfile none swap sw 0 0'
     state: present
+
 # --- SYSTEM BASICS ---
 - name: Update apt cache
-  apt:
+  ansible.builtin.apt:              # <--- Fixed
     update_cache: true
     cache_valid_time: 3600
 
 - name: Install basics
-  apt:
+  ansible.builtin.apt:              # <--- Fixed
     name: ['curl', 'git', 'ufw', 'fail2ban', 'unattended-upgrades']
     state: present
 
-# --- FIREWALL (ORDER MATTERS!) ---
+# --- FIREWALL ---
 - name: Allow SSH
-  ufw:
+  community.general.ufw:            # <--- Fixed (Requires community.general collection)
     rule: allow
     name: OpenSSH
 
 - name: Configure UFW (Firewall)
-  ufw:
+  community.general.ufw:            # <--- Fixed
     state: enabled
     policy: deny
 
 # --- SSH HARDENING ---
 - name: Secure SSH (Disable Root Login)
-  lineinfile:
+  ansible.builtin.lineinfile:       # <--- Fixed
     path: /etc/ssh/sshd_config
     regexp: '^PermitRootLogin'
-    # 'prohibit-password' is SAFER than 'no' if you are using keys to login as root
     line: 'PermitRootLogin prohibit-password'
   notify: Restart SSH

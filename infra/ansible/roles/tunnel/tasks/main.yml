@@ -1,11 +1,11 @@
 - name: Download Cloudflared
-  get_url:
+  ansible.builtin.get_url:          # <--- Fixed
     url: https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
     dest: /usr/local/bin/cloudflared
     mode: '0755'
 
 - name: Create Cloudflared Service File
-  copy:
+  ansible.builtin.copy:             # <--- Fixed
     dest: /etc/systemd/system/cloudflared.service
     mode: '0644'
     content: |
@@ -24,11 +24,11 @@
       WantedBy=multi-user.target
 
 - name: Reload Systemd Daemon
-  systemd:
+  ansible.builtin.systemd:          # <--- Fixed
     daemon_reload: true
 
 - name: Start Tunnel Service
-  service:
+  ansible.builtin.service:          # <--- Fixed
     name: cloudflared
-    state: restarted  # Restart to ensure new config applies
+    state: restarted
     enabled: true
