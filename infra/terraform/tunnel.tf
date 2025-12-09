@@ -10,7 +10,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared" "main" {
   config_src    = "cloudflare"
 }
 
-# 2. Token Data Source (Fixes "Unsupported attribute tunnel_token")
+# 2. Token Data Source (Fixes "Unsupported attribute tunnel_token"
 data "cloudflare_zero_trust_tunnel_cloudflared_token" "main" {
   account_id = var.cloudflare_account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.main.id
