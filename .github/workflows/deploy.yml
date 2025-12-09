@@ -1,0 +1,136 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "infra/**"
+      - "monitoring/**"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "infra/**"
+      - "monitoring/**"
+
+permissions:
+  contents: read
+  pull-requests: write # Needed to comment the Terraform Plan on the PR
+
+jobs:
+  infra-cicd:
+    name: Infrastructure Lifecycle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infra
+
+    env:
+      # Secrets for Terraform & Ansible
+      AWS_ACCESS_KEY_ID: ${{ secrets.SPACES_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SPACES_SECRET_ACCESS_KEY }}
+      TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_cloudflare_account_id: ${{ secrets.TF_VAR_cloudflare_account_id }}
+      TF_VAR_cloudflare_zone_id: ${{ secrets.TF_VAR_cloudflare_zone_id }}
+      TF_VAR_admin_email: ${{ secrets.TF_VAR_admin_email }}
+      TF_VAR_domain: ${{secrets.DOMAIN}}
+      TF_VAR_ssh_pub_path: "./ansible/ssh_key.pub"
+      ANSIBLE_HOST_KEY_CHECKING: "False"
+
+    steps:
+      # 1. SETUP
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Setup Ansible
+        run: |
+          pip install ansible ansible-lint
+          ansible-galaxy collection install community.docker || true
+
+      - name: Configure SSH Keys
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > ./ansible/ssh_key.pub
+          echo "Host *" > ~/.ssh/config
+          echo "StrictHostKeyChecking no" >> ~/.ssh/config
+
+      # 2. TERRAFORM (Plan on PR, Apply on Push)
+      - name: Terraform Init
+        run: terraform init -upgrade
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      - name: Terraform Plan (PR Only)
+        if: github.event_name == 'pull_request'
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: true
+
+      - name: Terraform Apply (Main Branch Only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false
+
+      # 3. ANSIBLE (Lint on PR, Configure on Push)
+      - name: Ansible Lint (PR Only)
+        if: github.event_name == 'pull_request'
+        run: |
+          # Check syntax only (does not connect to server)
+          ansible-playbook -i ansible/inventory.ini ansible/playbook.yml --syntax-check
+          # Run Linter
+          ansible-lint ansible/playbook.yml
+
+      - name: Ansible Apply (Main Branch Only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          # Create Vault Password File
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
+
+          # Terraform might have just updated the IP, so we ensure inventory exists
+          # (Note: In a fresh run, Terraform generates the inventory file locally.
+          # Since we are in the same job, the file exists.)
+
+          ansible-playbook -i ansible/inventory.ini \
+            --vault-password-file .vault_pass \
+            ansible/playbook.yml
+
+          rm .vault_pass
+
+      # 4. MONITORING DEPLOY (Main Branch Only)
+      - name: Deploy Monitoring Stack
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          GRAFANA_PASSWORD: ${{ secrets.GRAFANA_PASSWORD }}
+          DOMAIN: ${{secrets.DOMAIN}}
+        run: |
+          # Extract IP from the Terraform-generated inventory
+          SERVER_IP=$(grep -oP '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' ansible/inventory.ini | head -1)
+
+          if [ -z "$SERVER_IP" ]; then
+            echo "Error: Could not find Server IP in inventory."
+            exit 1
+          fi
+
+          echo "Deploying Monitoring to $SERVER_IP..."
+
+          # Reset to root dir
+          cd $GITHUB_WORKSPACE
+
+          # Create .env for Compose
+          echo "GRAFANA_PASSWORD=$GRAFANA_PASSWORD" > monitoring/.env
+          echo "DOMAIN=$DOMAIN" >> monitoring/.env
+
+          # Push Config & Restart
+          scp -o StrictHostKeyChecking=no -r monitoring/ root@$SERVER_IP:/etc/dokploy/
+          ssh -o StrictHostKeyChecking=no root@$SERVER_IP "
+            cd /etc/dokploy/monitoring && \
+            docker compose down --remove-orphans && \
+            docker compose up -d
+          "
