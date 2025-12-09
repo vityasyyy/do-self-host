@@ -2,7 +2,7 @@ resource "digitalocean_ssh_key" "main" {
   name       = "main_ssh_key"
   public_key = file(var.ssh_pub_path)
 }
-
+#trigger something
 resource "digitalocean_droplet" "server" {
   name      = "dokploy-main"
   image     = "ubuntu-24-04-x64"
