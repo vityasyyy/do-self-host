@@ -46,7 +46,7 @@ jobs:
       - name: Setup Ansible
         run: |
           pip install ansible ansible-lint
-          ansible-galaxy collection install community.docker || true
+          ansible-galaxy collection install community.docker community.general || true
 
       - name: Configure SSH Keys
         run: |
