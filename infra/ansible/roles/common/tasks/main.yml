@@ -49,10 +49,11 @@
     state: present
 
 # --- FIREWALL ---
-- name: Allow SSH
-  community.general.ufw:            # <--- Fixed (Requires community.general collection)
+- name: Allow Custom SSH Port
+  community.general.ufw:
     rule: allow
-    name: OpenSSH
+    port: '2222'
+    proto: tcp
 
 - name: Configure UFW (Firewall)
   community.general.ufw:            # <--- Fixed
@@ -65,4 +66,32 @@
     path: /etc/ssh/sshd_config
     regexp: '^PermitRootLogin'
     line: 'PermitRootLogin prohibit-password'
+  notify: Restart SSH
+
+- name: Change SSH Port to 2222
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Port'
+    line: 'Port 2222'
+  notify: Restart SSH
+
+- name: Disable Password Authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  notify: Restart SSH
+
+- name: Disable Challenge Response Authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?ChallengeResponseAuthentication'
+    line: 'ChallengeResponseAuthentication no'
+  notify: Restart SSH
+
+- name: Disable Empty Passwords
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitEmptyPasswords'
+    line: 'PermitEmptyPasswords no'
   notify: Restart SSH

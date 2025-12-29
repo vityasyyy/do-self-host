@@ -20,7 +20,7 @@ resource "digitalocean_firewall" "strict" {
 
   inbound_rule {
     protocol         = "tcp"
-    port_range       = "22"
+    port_range       = "2222"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
   outbound_rule {
