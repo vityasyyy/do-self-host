@@ -106,12 +106,12 @@ resource "cloudflare_zero_trust_access_policy" "allow_service_token" {
 
 output "cf_service_token_id" {
   value     = cloudflare_zero_trust_access_service_token.ci_deployer.client_id
-  sensitive = false
+  sensitive = true
 }
 
 output "cf_service_token_secret" {
   value     = cloudflare_zero_trust_access_service_token.ci_deployer.client_secret
-  sensitive = false
+  sensitive = true
 }
 
 # 7. Access Applications (Fixes "policies" error)
