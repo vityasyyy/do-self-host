@@ -86,6 +86,34 @@ resource "cloudflare_zero_trust_access_policy" "admin_policy" {
   }]
 }
 
+resource "cloudflare_zero_trust_access_service_token" "ci_deployer" {
+  account_id = var.cloudflare_account_id
+  name       = "CI/CD Deployer Token"
+  duration   = "forever"
+}
+
+resource "cloudflare_zero_trust_access_policy" "allow_service_token" {
+  account_id = var.cloudflare_account_id
+  name       = "Allow CI/CD Bot"
+  decision   = "non_identity" # Important: Service tokens are "non_identity"
+
+  include = [{
+    service_token = {
+      token_id = cloudflare_zero_trust_access_service_token.ci_deployer.id
+    }
+  }]
+}
+
+output "cf_service_token_id" {
+  value = cloudflare_zero_trust_access_service_token.ci_deployer.client_id
+  # sensitive = true
+}
+
+output "cf_service_token_secret" {
+  value = cloudflare_zero_trust_access_service_token.ci_deployer.client_secret
+  # sensitive = true
+}
+
 # 7. Access Applications (Fixes "policies" error)
 resource "cloudflare_zero_trust_access_application" "dokploy" {
   account_id       = var.cloudflare_account_id
@@ -95,10 +123,16 @@ resource "cloudflare_zero_trust_access_application" "dokploy" {
   type             = "self_hosted"
 
   # Policies must be a list of OBJECTS now
-  policies = [{
-    id         = cloudflare_zero_trust_access_policy.admin_policy.id
-    precedence = 1
-  }]
+  policies = [
+    {
+      id         = cloudflare_zero_trust_access_policy.admin_policy.id
+      precedence = 1
+    },
+    {
+      id         = cloudflare_zero_trust_access_policy.allow_service_token.id
+      precedence = 2
+    }
+  ]
 }
 
 resource "cloudflare_zero_trust_access_application" "grafana" {
