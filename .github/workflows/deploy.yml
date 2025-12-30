@@ -71,7 +71,7 @@ jobs:
           cp ~/.ssh/github_actions_key ./ansible/ssh_key
           chmod 600 ./ansible/ssh_key
 
-          # 4. Config to prevent "Host Verification" errors
+          # 4. Configure SSH to use Cloudflare Access proxy for tunnel connections
           echo "Host ssh.${{ secrets.DOMAIN }}" > ~/.ssh/config
           echo "  ProxyCommand cloudflared access ssh --hostname %h --id ${{ secrets.CLOUDFLARE_SERVICE_TOKEN_ID }} --secret ${{ secrets.CLOUDFLARE_SERVICE_TOKEN_SECRET }}" >> ~/.ssh/config
           echo "  StrictHostKeyChecking no" >> ~/.ssh/config
