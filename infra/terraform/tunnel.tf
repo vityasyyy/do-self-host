@@ -25,7 +25,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
     ingress = [
       {
         hostname = "ssh.${var.domain}"
-        service  = "ssh://localhost:22"
+        service  = "ssh://localhost:2222"
       },
       {
         hostname = "dokploy.${var.domain}"
