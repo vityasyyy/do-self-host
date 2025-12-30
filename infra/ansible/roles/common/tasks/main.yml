@@ -48,13 +48,6 @@
     name: ['curl', 'git', 'ufw', 'fail2ban', 'unattended-upgrades']
     state: present
 
-# --- FIREWALL ---
-- name: Allow Custom SSH Port
-  community.general.ufw:
-    rule: allow
-    port: '2222'
-    proto: tcp
-
 - name: Configure UFW (Firewall)
   community.general.ufw:            # <--- Fixed
     state: enabled
@@ -68,11 +61,11 @@
     line: 'PermitRootLogin prohibit-password'
   notify: Restart SSH
 
-- name: Change SSH Port to 2222
+- name: Ensure SSH at Port 22
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?Port'
-    line: 'Port 2222'
+    line: 'Port 22'
   notify: Restart SSH
 
 - name: Disable Password Authentication
