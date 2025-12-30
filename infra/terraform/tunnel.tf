@@ -24,6 +24,10 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
   config = {
     ingress = [
       {
+        hostname = "ssh.${var.domain}"
+        service  = "ssh://localhost:22"
+      },
+      {
         hostname = "dokploy.${var.domain}"
         service  = "http://127.0.0.1:3000"
       },
@@ -47,6 +51,15 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
 }
 
 # 4. DNS Records (New resource name: cloudflare_dns_record)
+resource "cloudflare_dns_record" "ssh" {
+  zone_id = var.cloudflare_zone_id
+  name    = "ssh"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.main.id}.cfargotunnel.com"
+  type    = "CNAME"
+  proxied = true
+  ttl     = 1
+}
+
 resource "cloudflare_dns_record" "root" {
   zone_id = var.cloudflare_zone_id
   name    = "@"
@@ -183,7 +196,7 @@ resource "local_file" "tunnel_token" {
 resource "local_file" "ansible_inventory" {
   content  = <<EOT
 [dokploy_servers]
-${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
+ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
 EOT
   filename = "${path.module}/../ansible/inventory.ini"
 }

@@ -2,7 +2,7 @@ resource "digitalocean_ssh_key" "main" {
   name       = "main_ssh_key"
   public_key = file(var.ssh_pub_path)
 }
-#trigger something
+
 resource "digitalocean_droplet" "server" {
   name      = "dokploy-main"
   image     = "ubuntu-24-04-x64"
@@ -18,16 +18,6 @@ resource "digitalocean_firewall" "strict" {
   name        = "tunnel-only-firewall"
   droplet_ids = [digitalocean_droplet.server.id]
 
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "2222"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "22"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
   outbound_rule {
     protocol              = "tcp"
     port_range            = "1-65535"
