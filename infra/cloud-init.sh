@@ -12,7 +12,7 @@ systemctl restart ssh
 
 # 2. Update Firewall to allow port 2222 instead of OpenSSH (22)
 ufw allow 2222/tcp
-ufw enable
+ufw --force enable
 
 # --- NEW: Bootstrap Cloudflare Tunnel ---
 # 3. Install Cloudflared
