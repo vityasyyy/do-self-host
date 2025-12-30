@@ -22,7 +22,10 @@ ufw --force enable
 
 # --- NEW: Bootstrap Cloudflare Tunnel ---
 # 3. Install Cloudflared
-wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+if ! wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb; then
+  echo "Error: Failed to download cloudflared package." >&2
+  exit 1
+fi
 dpkg -i cloudflared-linux-amd64.deb
 
 # 4. Start the tunnel using the token injected by Terraform
