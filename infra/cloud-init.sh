@@ -26,7 +26,7 @@ if ! wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/
   echo "Error: Failed to download cloudflared package." >&2
   exit 1
 fi
-dpkg -i cloudflared-linux-amd64.deb
+dpkg -i cloudflared-linux-amd64.deb && rm -f cloudflared-linux-amd64.deb
 
 # 4. Start the tunnel using the token injected by Terraform
 # Terraform will replace ${tunnel_token} with the actual secret
