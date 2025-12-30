@@ -5,8 +5,9 @@ apt-get install -y python3 ufw
 
 # --- NEW: Configure SSH to listen on Port 2222 ---
 # 1. Change sshd_config to use Port 2222
-sed -i 's/#Port 22/Port 2222/g' /etc/ssh/sshd_config
-sed -i 's/Port 22/Port 2222/g' /etc/ssh/sshd_config
+# Remove any existing Port directives (commented or not), then append the desired port
+sed -i -E '/^[[:space:]]*#?[[:space:]]*Port[[:space:]]+[0-9]+/d' /etc/ssh/sshd_config
+echo 'Port 2222' >> /etc/ssh/sshd_config
 systemctl restart ssh
 
 # 2. Update Firewall to allow port 2222 instead of OpenSSH (22)
