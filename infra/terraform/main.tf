@@ -4,16 +4,17 @@ resource "digitalocean_ssh_key" "main" {
 }
 
 resource "digitalocean_droplet" "server" {
-  name     = "dokploy-main"
-  image    = "ubuntu-24-04-x64"
-  region   = var.region
-  size     = var.size
-  ssh_keys = [digitalocean_ssh_key.main.fingerprint]
-  user_data = templatefile("${path.module}/../cloud-init.sh", {
-    tunnel_token = data.cloudflare_zero_trust_tunnel_cloudflared_token.main.token
-  })
-  backups = false
-  tags    = ["dokploy", "production"]
+  name      = "dokploy-main"
+  image     = "ubuntu-24-04-x64"
+  region    = var.region
+  size      = var.size
+  ssh_keys  = [digitalocean_ssh_key.main.fingerprint]
+  user_data = file("${path.module}/../cloud-init.sh")
+  backups   = false
+  tags      = ["dokploy", "production"]
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
 
 resource "digitalocean_firewall" "strict" {
