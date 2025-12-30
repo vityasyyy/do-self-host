@@ -34,5 +34,5 @@ variable "size" {
 
 variable "ssh_pub_path" {
   type    = string
-  default = "~/.ssh/id_ed25519_do.pub"
+  default = "~/.ssh/github_actions_key.pub"
 }
