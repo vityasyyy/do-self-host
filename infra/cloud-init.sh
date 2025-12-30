@@ -20,5 +20,14 @@ dpkg -i cloudflared-linux-amd64.deb
 
 # 4. Start the tunnel using the token injected by Terraform
 # Terraform will replace ${tunnel_token} with the actual secret
-cloudflared service install ${tunnel_token}
+if [ -z "${tunnel_token}" ]; then
+    echo "Error: tunnel_token is not set or is empty. Cannot install Cloudflared service." >&2
+    exit 1
+fi
+
+cloudflared service install "${tunnel_token}"
+if [ $? -ne 0 ]; then
+    echo "Error: 'cloudflared service install' failed. Not starting cloudflared service." >&2
+    exit 1
+fi
 systemctl start cloudflared
