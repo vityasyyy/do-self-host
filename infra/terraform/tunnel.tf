@@ -208,7 +208,8 @@ resource "cloudflare_zero_trust_access_application" "ssh" {
 # 8. Output Files (Uses the new Data Source)
 # Output the Tunnel ID so Ansible can find it
 output "tunnel_id" {
-  value = cloudflare_zero_trust_tunnel_cloudflared.main.id
+  value     = cloudflare_zero_trust_tunnel_cloudflared.main.id
+  sensitive = true
 }
 
 resource "local_file" "ansible_inventory" {
