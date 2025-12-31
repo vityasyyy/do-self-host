@@ -1,25 +1,18 @@
 resource "random_id" "tunnel_secret" {
   byte_length = 32
+  keepers = {
+    rotate = var.rotate_tunnel_token # Changing the var changes the id
+  }
 }
 
 # 1. Tunnel Resource
 resource "cloudflare_zero_trust_tunnel_cloudflared" "main" {
-  account_id = var.cloudflare_account_id
-  name       = "dokploy-tunnel"
-  config_src = "cloudflare"
+  account_id    = var.cloudflare_account_id
+  name          = "dokploy-tunnel"
+  config_src    = "cloudflare"
+  tunnel_secret = random_id.tunnel_secret.b64_std
 }
 
-# 2. Token Data Source (Fixes "Unsupported attribute tunnel_token"
-data "cloudflare_zero_trust_tunnel_cloudflared_token" "main" {
-  account_id = var.cloudflare_account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.main.id
-
-  lifecycle {
-    replace_triggered_by = [
-      var.rotate_tunnel_token
-    ]
-  }
-}
 
 # 3. Tunnel Config
 resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
@@ -212,10 +205,9 @@ resource "cloudflare_zero_trust_access_application" "ssh" {
 }
 
 # 8. Output Files (Uses the new Data Source)
-resource "local_file" "tunnel_token" {
-  content           = "tunnel_token: ${data.cloudflare_zero_trust_tunnel_cloudflared_token.main.token}"
-  filename          = "${path.module}/../ansible/host_vars/tunnel_secret.yml"
-  sensitive_content = true
+# Output the Tunnel ID so Ansible can find it
+output "tunnel_id" {
+  value = cloudflare_zero_trust_tunnel_cloudflared.main.id
 }
 
 resource "local_file" "ansible_inventory" {
