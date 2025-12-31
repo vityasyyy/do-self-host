@@ -31,6 +31,8 @@ jobs:
       TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
       TF_VAR_admin_email: ${{ secrets.ADMIN_EMAIL }}
       TF_VAR_domain: ${{ secrets.DOMAIN }}
+      TF_VAR_maintenance_mode: ${{ secrets.MAINTENANCE_MODE == 'true' }}
+      TF_VAR_rotate_tunnel_token: ${{ secrets.ROTATE_TUNNEL_TOKEN == 'true' }}
       TF_VAR_ssh_pub_path: "../ansible/ssh_key.pub"
       ANSIBLE_HOST_KEY_CHECKING: "False"
       CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
@@ -111,12 +113,20 @@ jobs:
       - name: Ansible Apply (Runs on Push)
         working-directory: ./infra/ansible
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          # Pass these secrets to Ansible environment
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           export ANSIBLE_SSH_ARGS="-F $HOME/.ssh/config"
           echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
-
+          cat > cloudflare_vars.yml << 'EOF'
+          cloudflare_api_token: "{{ lookup('env', 'CLOUDFLARE_API_TOKEN') }}"
+          cloudflare_account_id: "{{ lookup('env', 'CLOUDFLARE_ACCOUNT_ID') }}"
+          EOF
           ansible-playbook -i inventory.ini \
             --vault-password-file .vault_pass \
+            -e "@cloudflare_vars.yml" \
             playbook.yml
 
           rm .vault_pass

@@ -1,0 +1,6 @@
+- name: Restart Cloudflared
+  ansible.builtin.service:
+    name: cloudflared
+    state: restarted
+    enabled: true
+  register: tunnel_cloudflared_restart

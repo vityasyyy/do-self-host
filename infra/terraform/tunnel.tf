@@ -1,20 +1,19 @@
-resource "random_id" "tunnel_secret" {
-  byte_length = 32
+resource "random_password" "tunnel_secret" {
+  length  = 48
+  special = false
+  keepers = {
+    rotate = var.rotate_tunnel_token
+  }
 }
 
 # 1. Tunnel Resource
 resource "cloudflare_zero_trust_tunnel_cloudflared" "main" {
   account_id    = var.cloudflare_account_id
   name          = "dokploy-tunnel"
-  tunnel_secret = base64sha256(random_id.tunnel_secret.hex)
   config_src    = "cloudflare"
+  tunnel_secret = base64encode(random_password.tunnel_secret.result)
 }
 
-# 2. Token Data Source (Fixes "Unsupported attribute tunnel_token"
-data "cloudflare_zero_trust_tunnel_cloudflared_token" "main" {
-  account_id = var.cloudflare_account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.main.id
-}
 
 # 3. Tunnel Config
 resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
@@ -207,15 +206,20 @@ resource "cloudflare_zero_trust_access_application" "ssh" {
 }
 
 # 8. Output Files (Uses the new Data Source)
-resource "local_file" "tunnel_token" {
-  content  = "tunnel_token: ${data.cloudflare_zero_trust_tunnel_cloudflared_token.main.token}"
-  filename = "${path.module}/../ansible/host_vars/tunnel_secret.yml"
+# Output the Tunnel ID so Ansible can find it
+output "tunnel_id" {
+  value     = cloudflare_zero_trust_tunnel_cloudflared.main.id
+  sensitive = true
 }
 
 resource "local_file" "ansible_inventory" {
   content  = <<EOT
 [dokploy_servers]
-ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
+%{if var.maintenance_mode}
+${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id}
+%{else}
+ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id}
+%{endif}
 EOT
   filename = "${path.module}/../ansible/inventory.ini"
 }
