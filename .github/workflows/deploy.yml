@@ -108,6 +108,41 @@ jobs:
           # Lint Check
           ansible-lint playbook.yml
 
+      - name: Debug SSH via Cloudflare
+        working-directory: ./infra/ansible
+        run: |
+          echo "===== SSH CONFIG ====="
+          cat ~/.ssh/config || true
+
+          echo "===== RESOLVING HOST ====="
+          getent hosts ssh.${{ secrets.DOMAIN }} || true
+
+          echo "===== SSH DEBUG ====="
+          ssh -vvv ssh.${{ secrets.DOMAIN }} true || true
+
+      - name: Debug Cloudflared Access
+        run: |
+          cloudflared --version
+
+          echo "===== ACCESS TOKEN TEST ====="
+          cloudflared access token --hostname ssh.${{ secrets.DOMAIN }} || true
+
+      - name: Ansible Apply (DEBUG)
+        working-directory: ./infra/ansible
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          export ANSIBLE_SSH_ARGS="-F ~/.ssh/config"
+          export ANSIBLE_DEBUG=1
+
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
+
+          ansible-playbook -i inventory.ini \
+            --vault-password-file .vault_pass \
+            -vvvv \
+            playbook.yml || true
+
+          rm .vault_pass
+
       - name: Ansible Apply (Runs on Push)
         working-directory: ./infra/ansible
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
