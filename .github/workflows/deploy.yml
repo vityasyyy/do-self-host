@@ -108,11 +108,26 @@ jobs:
           # Lint Check
           ansible-lint playbook.yml
 
+      - name: Ansible Apply (DEBUG)
+        working-directory: ./infra/ansible
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          export ANSIBLE_SSH_ARGS="-F $HOME/.ssh/config"
+          export ANSIBLE_DEBUG=1
+
+          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
+
+          ansible-playbook -i inventory.ini \
+            --vault-password-file .vault_pass \
+            -vvvv \
+            playbook.yml || true
+
+          rm .vault_pass
+
       - name: Ansible Apply (Runs on Push)
         working-directory: ./infra/ansible
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          export ANSIBLE_SSH_ARGS="-C -o ControlMaster=auto -o ControlPersist=60s -F $HOME/.ssh/config"
           echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
 
           ansible-playbook -i inventory.ini \
