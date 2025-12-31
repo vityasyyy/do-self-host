@@ -3,6 +3,6 @@
     name: cloudflared
     state: restarted
     enabled: true
-  async: 45  # Run in background
-  poll: 0    # Don't wait for result (Fire and Forget)
-  register: cloudflared_restart
+  async: 45
+  poll: 0
+  register: tunnel_cloudflared_restart

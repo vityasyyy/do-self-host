@@ -6,8 +6,8 @@
 
 
 - name: Verify Cloudflared Binary Works
-  command: /usr/local/bin/cloudflared --version
-  register: cloudflared_version
+  ansible.builtin.command: /usr/local/bin/cloudflared --version
+  register: tunnel_cloudflared_version
   changed_when: false
   failed_when: cloudflared_version.rc != 0
 
