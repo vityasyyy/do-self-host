@@ -1,19 +1,24 @@
 resource "random_id" "tunnel_secret" {
-  byte_length = 33
+  byte_length = 32
 }
 
 # 1. Tunnel Resource
 resource "cloudflare_zero_trust_tunnel_cloudflared" "main" {
-  account_id    = var.cloudflare_account_id
-  name          = "dokploy-tunnel"
-  tunnel_secret = base64sha256(random_id.tunnel_secret.hex)
-  config_src    = "cloudflare"
+  account_id = var.cloudflare_account_id
+  name       = "dokploy-tunnel"
+  config_src = "cloudflare"
 }
 
 # 2. Token Data Source (Fixes "Unsupported attribute tunnel_token"
 data "cloudflare_zero_trust_tunnel_cloudflared_token" "main" {
   account_id = var.cloudflare_account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.main.id
+
+  lifecycle {
+    replace_triggered_by = [
+      var.rotate_tunnel_token
+    ]
+  }
 }
 
 # 3. Tunnel Config

@@ -1,15 +1,14 @@
 - name: Download Cloudflared
-  ansible.builtin.get_url:          # <--- Fixed
+  ansible.builtin.get_url:
     url: https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
     dest: /usr/local/bin/cloudflared
     mode: '0755'
-
 
 - name: Verify Cloudflared Binary Works
   ansible.builtin.command: /usr/local/bin/cloudflared --version
   register: tunnel_cloudflared_version
   changed_when: false
-  failed_when: cloudflared_version.rc != 0
+  failed_when: tunnel_cloudflared_version.rc != 0
 
 - name: Create Cloudflared Service File
   ansible.builtin.copy:
@@ -29,7 +28,7 @@
 
       [Install]
       WantedBy=multi-user.target
-  notify: Restart Cloudflared  # <--- Triggers the handler ONLY if file changes
+  notify: Restart Cloudflared
 
 - name: Reload Systemd Daemon
   ansible.builtin.systemd:
@@ -39,5 +38,13 @@
 - name: Ensure Tunnel Service is Running
   ansible.builtin.service:
     name: cloudflared
-    state: started      # <--- 'started', not 'restarted'. Checks if it's up.
+    state: started
     enabled: true
+
+- name: Wait for cloudflared to be active
+  ansible.builtin.systemd:
+    name: cloudflared
+  register: tunnel_cloudflared_status
+  retries: 5
+  delay: 3
+  until: tunnel_cloudflared_status.status.ActiveState == "active"

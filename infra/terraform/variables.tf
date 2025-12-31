@@ -41,3 +41,8 @@ variable "maintenance_mode" {
   type        = bool
   default     = false
 }
+
+variable "rotate_tunnel_token" {
+  type    = bool
+  default = false
+}

@@ -3,6 +3,4 @@
     name: cloudflared
     state: restarted
     enabled: true
-  async: 45
-  poll: 0
   register: tunnel_cloudflared_restart
