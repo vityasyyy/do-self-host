@@ -1,7 +1,8 @@
-resource "random_id" "tunnel_secret" {
-  byte_length = 32
+resource "random_password" "tunnel_secret" {
+  length  = 48
+  special = false
   keepers = {
-    rotate = var.rotate_tunnel_token # Changing the var changes the id
+    rotate = var.rotate_tunnel_token
   }
 }
 
@@ -10,7 +11,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared" "main" {
   account_id    = var.cloudflare_account_id
   name          = "dokploy-tunnel"
   config_src    = "cloudflare"
-  tunnel_secret = random_id.tunnel_secret.b64_std
+  tunnel_secret = base64encode(random_password.tunnel_secret.result)
 }
 
 
