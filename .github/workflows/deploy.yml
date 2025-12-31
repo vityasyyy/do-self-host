@@ -73,7 +73,7 @@ jobs:
 
           # 4. Configure SSH to use Cloudflare Access proxy for tunnel connections
           echo "Host ssh.${{ secrets.DOMAIN }}" > ~/.ssh/config
-          echo "  ProxyCommand cloudflared access ssh --hostname %h --id ${CF_ACCESS_CLIENT_ID} --secret ${CF_ACCESS_CLIENT_SECRET}" >> ~/.ssh/config
+          echo "  ProxyCommand cloudflared access ssh --hostname %h --service-token-id ${CF_ACCESS_CLIENT_ID} --service-token-secret ${CF_ACCESS_CLIENT_SECRET}" >> ~/.ssh/config
           echo "  StrictHostKeyChecking no" >> ~/.ssh/config
 
       - name: Terraform Init
@@ -116,9 +116,6 @@ jobs:
 
           echo "===== RESOLVING HOST ====="
           getent hosts ssh.${{ secrets.DOMAIN }} || true
-
-          echo "===== SSH DEBUG ====="
-          ssh -vvv ssh.${{ secrets.DOMAIN }} true || true
 
       - name: Debug Cloudflared Access
         run: |
