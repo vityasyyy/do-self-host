@@ -75,6 +75,18 @@
     line: 'Port 2222'
   notify: Restart SSH
 
+- name: Disable DNS lookup
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?UseDNS'
+    line: 'UseDNS no'
+
+- name: Disable GSSAPI Kerberos
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?GSSAPIAuthentication'
+    line: 'GSSAPIAuthentication no'
+
 - name: Disable Password Authentication
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
