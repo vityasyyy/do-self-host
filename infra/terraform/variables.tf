@@ -37,7 +37,7 @@ variable "ssh_pub_path" {
   default = "~/.ssh/github_actions_key.pub"
 }
 variable "maintenance_mode" {
-  description = "Enable to open SSH port 22 and connect via IP for emergency rotation"
+  description = "Enable to open SSH port 2222 and connect via IP for emergency rotation"
   type        = bool
   default     = false
 }
