@@ -214,12 +214,12 @@ resource "local_file" "tunnel_token" {
 
 resource "local_file" "ansible_inventory" {
   content  = <<EOT
-  [dokploy_servers]
-  %{if var.maintenance_mode}
-  ${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
-  %{else}
-  ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
-  %{endif}
-  EOT
+[dokploy_servers]
+%{if var.maintenance_mode}
+${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
+%{else}
+ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
+%{endif}
+EOT
   filename = "${path.module}/../ansible/inventory.ini"
 }
