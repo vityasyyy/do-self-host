@@ -12,6 +12,9 @@ resource "digitalocean_droplet" "server" {
   user_data = file("${path.module}/../cloud-init.sh")
   backups   = false
   tags      = ["dokploy", "production"]
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }
 
 resource "digitalocean_firewall" "strict" {
