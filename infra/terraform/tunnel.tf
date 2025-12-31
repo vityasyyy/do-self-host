@@ -187,6 +187,25 @@ resource "cloudflare_zero_trust_access_application" "traefik" {
   }]
 }
 
+resource "cloudflare_zero_trust_access_application" "ssh" {
+  account_id       = var.cloudflare_account_id
+  name             = "ssh vityasy homelab"
+  domain           = "ssh.${var.domain}"
+  session_duration = "24h"
+  type             = "self_hosted"
+
+  policies = [
+    {
+      id         = cloudflare_zero_trust_access_policy.admin_policy.id
+      precedence = 1
+    },
+    {
+      id         = cloudflare_zero_trust_access_policy.allow_service_token.id
+      precedence = 2
+    }
+  ]
+}
+
 # 8. Output Files (Uses the new Data Source)
 resource "local_file" "tunnel_token" {
   content  = "tunnel_token: ${data.cloudflare_zero_trust_tunnel_cloudflared_token.main.token}"
