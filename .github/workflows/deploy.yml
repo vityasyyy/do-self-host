@@ -31,7 +31,7 @@ jobs:
       TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
       TF_VAR_admin_email: ${{ secrets.ADMIN_EMAIL }}
       TF_VAR_domain: ${{ secrets.DOMAIN }}
-      TF_VAR_maintenance_mode: ${{ secrets.MAINTENANCE_MODE }}
+      TF_VAR_maintenance_mode: ${{ secrets.MAINTENANCE_MODE == 'true' }}
       TF_VAR_ssh_pub_path: "../ansible/ssh_key.pub"
       ANSIBLE_HOST_KEY_CHECKING: "False"
       CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
