@@ -1,5 +1,5 @@
 resource "random_id" "tunnel_secret" {
-  byte_length = 32
+  byte_length = 33
 }
 
 # 1. Tunnel Resource
@@ -208,14 +208,18 @@ resource "cloudflare_zero_trust_access_application" "ssh" {
 
 # 8. Output Files (Uses the new Data Source)
 resource "local_file" "tunnel_token" {
-  content  = "tunnel_token: ${data.cloudflare_zero_trust_tunnel_cloudflared_token.main.token}"
+  content  = sensitive("tunnel_token: ${data.cloudflare_zero_trust_tunnel_cloudflared_token.main.token}")
   filename = "${path.module}/../ansible/host_vars/tunnel_secret.yml"
 }
 
 resource "local_file" "ansible_inventory" {
   content  = <<EOT
-[dokploy_servers]
-ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
-EOT
+  [dokploy_servers]
+  %{if var.maintenance_mode}
+  ${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
+  %{else}
+  ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")}
+  %{endif}
+  EOT
   filename = "${path.module}/../ansible/inventory.ini"
 }

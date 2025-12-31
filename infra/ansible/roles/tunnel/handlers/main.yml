@@ -1,0 +1,8 @@
+- name: Restart Cloudflared
+  ansible.builtin.service:
+    name: cloudflared
+    state: restarted
+    enabled: true
+  async: 45  # Run in background
+  poll: 0    # Don't wait for result (Fire and Forget)
+  register: cloudflared_restart

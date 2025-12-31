@@ -4,8 +4,15 @@
     dest: /usr/local/bin/cloudflared
     mode: '0755'
 
+
+- name: Verify Cloudflared Binary Works
+  command: /usr/local/bin/cloudflared --version
+  register: cloudflared_version
+  changed_when: false
+  failed_when: cloudflared_version.rc != 0
+
 - name: Create Cloudflared Service File
-  ansible.builtin.copy:             # <--- Fixed
+  ansible.builtin.copy:
     dest: /etc/systemd/system/cloudflared.service
     mode: '0644'
     content: |
@@ -22,13 +29,15 @@
 
       [Install]
       WantedBy=multi-user.target
+  notify: Restart Cloudflared  # <--- Triggers the handler ONLY if file changes
 
 - name: Reload Systemd Daemon
-  ansible.builtin.systemd:          # <--- Fixed
+  ansible.builtin.systemd:
     daemon_reload: true
+  when: ansible_service_mgr == 'systemd'
 
-- name: Start Tunnel Service
-  ansible.builtin.service:          # <--- Fixed
+- name: Ensure Tunnel Service is Running
+  ansible.builtin.service:
     name: cloudflared
-    state: restarted
+    state: started      # <--- 'started', not 'restarted'. Checks if it's up.
     enabled: true
