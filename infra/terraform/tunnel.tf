@@ -50,6 +50,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
   }
 }
 
+#trigger
 # 4. DNS Records (New resource name: cloudflare_dns_record)
 resource "cloudflare_dns_record" "ssh" {
   zone_id = var.cloudflare_zone_id
