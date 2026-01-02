@@ -114,19 +114,17 @@ jobs:
         working-directory: ./infra/ansible
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
-          # Pass these secrets to Ansible environment
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           export ANSIBLE_SSH_ARGS="-F $HOME/.ssh/config"
-          echo "${{ secrets.ANSIBLE_VAULT_PASSWORD }}" > .vault_pass
-          cat > cloudflare_vars.yml << 'EOF'
-          cloudflare_api_token: "{{ lookup('env', 'CLOUDFLARE_API_TOKEN') }}"
-          cloudflare_account_id: "{{ lookup('env', 'CLOUDFLARE_ACCOUNT_ID') }}"
-          EOF
+          echo "$ANSIBLE_VAULT_PASSWORD" > .vault_pass
+
+          # DIRECT FIX: Pass secrets directly via -e
           ansible-playbook -i inventory.ini \
             --vault-password-file .vault_pass \
-            -e "@cloudflare_vars.yml" \
+            -e "cloudflare_api_token=$CLOUDFLARE_API_TOKEN" \
+            -e "cloudflare_account_id=$CLOUDFLARE_ACCOUNT_ID" \
             playbook.yml
 
           rm .vault_pass
