@@ -56,6 +56,7 @@
     state: started
     enabled: true
 
+# trigger sum
 - name: Wait for cloudflared to be active
   ansible.builtin.systemd:
     name: cloudflared

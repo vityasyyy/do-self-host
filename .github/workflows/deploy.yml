@@ -116,11 +116,11 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
         run: |
           export ANSIBLE_SSH_ARGS="-F $HOME/.ssh/config"
           echo "$ANSIBLE_VAULT_PASSWORD" > .vault_pass
 
-          # DIRECT FIX: Pass secrets directly via -e
           ansible-playbook -i inventory.ini \
             --vault-password-file .vault_pass \
             -e "cloudflare_api_token=$CLOUDFLARE_API_TOKEN" \
