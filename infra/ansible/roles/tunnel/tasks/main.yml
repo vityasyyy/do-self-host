@@ -10,20 +10,6 @@
   changed_when: false
   failed_when: tunnel_cloudflared_version.rc != 0
 
-- name: Fetch Tunnel Token
-  ansible.builtin.uri:
-    url: "https://api.cloudflare.com/client/v4/accounts/{{ cloudflare_account_id }}/tunnels/{{ cf_tunnel_id }}/token"
-    method: GET
-    return_content: true
-    headers:
-      Authorization: "Bearer {{ cloudflare_api_token }}"
-      Content-Type: "application/json"
-  register: tunnel_cf_token_response
-
-- name: Set Token Fact
-  ansible.builtin.set_fact:
-    tunnel_token: "{{ cf_token_response.json.result }}"
-
 - name: Create Cloudflared Service File
   ansible.builtin.copy:
     dest: /etc/systemd/system/cloudflared.service
@@ -36,7 +22,7 @@
       [Service]
       TimeoutStartSec=0
       Type=notify
-      ExecStart=/usr/local/bin/cloudflared tunnel run --token {{ tunnel_token }}
+      ExecStart=/usr/local/bin/cloudflared tunnel run --token {{ cf_tunnel_token }}
       Restart=on-failure
       RestartSec=5s
 

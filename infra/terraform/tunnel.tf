@@ -216,9 +216,9 @@ resource "local_file" "ansible_inventory" {
   content  = <<EOT
 [dokploy_servers]
 %{if var.maintenance_mode}
-${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_port=2222 ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id}
+${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_port=2222 ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id} cf_tunnel_token=${cloudflare_zero_trust_tunnel_cloudflared.main.tunnel_secret}
 %{else}
-ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id}
+ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id} cf_tunnel_token=${cloudflare_zero_trust_tunnel_cloudflared.main.tunnel_secret}
 %{endif}
 EOT
   filename = "${path.module}/../ansible/inventory.ini"
