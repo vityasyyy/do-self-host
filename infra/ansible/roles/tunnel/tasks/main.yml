@@ -19,7 +19,6 @@
       Authorization: "Bearer {{ cloudflare_api_token }}"
       Content-Type: "application/json"
   register: tunnel_cf_token_response
-  no_log: true
 
 - name: Set Token Fact
   ansible.builtin.set_fact:
