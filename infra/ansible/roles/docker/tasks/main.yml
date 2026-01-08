@@ -1,5 +1,5 @@
 - name: Install Docker dependencies
-  apt:
+  ansible.builtin.apt:
     name:
       - ca-certificates
       - curl
@@ -9,19 +9,19 @@
     update_cache: true
 
 - name: Download Docker GPG key (ASCII)
-  get_url:
+  ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /tmp/docker.gpg.asc
     mode: '0644'
     force: true
 
 - name: Dearmor Docker GPG key
-  command: gpg --dearmor -o /usr/share/keyrings/docker.gpg /tmp/docker.gpg.asc
+  ansible.builtin.command: gpg --dearmor -o /usr/share/keyrings/docker.gpg /tmp/docker.gpg.asc
   args:
     creates: /usr/share/keyrings/docker.gpg
 
 - name: Add Docker repository
-  apt_repository:
+  ansible.builtin.apt_repository:
     repo: >
       deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg]
       https://download.docker.com/linux/ubuntu
@@ -29,7 +29,7 @@
     state: present
 
 - name: Install Docker Engine
-  apt:
+  ansible.builtin.apt:
     name:
       - docker-ce
       - docker-ce-cli
@@ -38,7 +38,7 @@
     update_cache: true
 
 - name: Configure Docker daemon
-  copy:
+  ansible.builtin.copy:
     dest: /etc/docker/daemon.json
     content: |
       {
@@ -54,13 +54,13 @@
     mode: "0644"
 
 - name: Start Docker
-  systemd:
+  ansible.builtin.systemd:
     name: docker
     state: started
     enabled: true
 
 - name: Fail if Docker storage driver is not overlay2
-  command: docker info --format '{{"{{"}} .Driver {{"}}"}}'
+  ansible.builtin.command: docker info --format '{{ "{{" }} .Driver {{ "}}" }}'
   register: docker_driver
   changed_when: false
   failed_when: docker_driver.stdout != "overlay2"
