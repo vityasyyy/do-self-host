@@ -1,13 +1,13 @@
 - name: "Setup Monitoring Stack"
   block:
     - name: Create monitoring directory
-      file:
+      ansible.builtin.file:
         path: /opt/monitoring
         state: directory
         mode: '0755'
 
     - name: Copy monitoring files
-      copy:
+      ansible.builtin.copy:
         src: "{{ playbook_dir }}/../../monitoring/" # navigating back from infra/ansible/ to root
         dest: /opt/monitoring/
         mode: '0644'
