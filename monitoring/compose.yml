@@ -90,6 +90,30 @@ services:
   #     - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
   #     # HIGHLY RECOMMENDED: Protect logs with a password since they show sensitive info
   #     # - "traefik.http.routers.dozzle.middlewares=dokploy-auth-basic"
+  #
+  loki:
+    image: grafana/loki:latest
+    container_name: monitoring-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - dokploy-network
+    volumes:
+      - loki_data:/loki
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml
+
+  # 6. Promtail (The Log Shipper)
+  promtail:
+    image: grafana/promtail:latest
+    container_name: monitoring-promtail
+    restart: unless-stopped
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Read container logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml # You need to create this file
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - dokploy-network
 
 networks:
   dokploy-network:
@@ -98,3 +122,4 @@ networks:
 volumes:
   prometheus_data:
   grafana_data:
+  loki_data:
