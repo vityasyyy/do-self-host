@@ -92,6 +92,7 @@ services:
   #     # HIGHLY RECOMMENDED: Protect logs with a password since they show sensitive info
   #     # - "traefik.http.routers.dozzle.middlewares=dokploy-auth-basic"
   #
+  # trigger
   loki:
     image: grafana/loki:latest
     container_name: monitoring-loki
