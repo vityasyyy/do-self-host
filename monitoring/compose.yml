@@ -96,7 +96,7 @@ services:
     image: grafana/loki:latest
     container_name: monitoring-loki
     restart: unless-stopped
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml
     networks:
       - dokploy-network
     volumes:
