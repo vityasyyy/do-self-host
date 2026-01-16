@@ -27,6 +27,7 @@ schema_config:
 # --- RETENTION CONFIGURATION ---
 compactor:
   working_directory: /loki/boltdb-shipper-compactor
+  delete_request_store: filesystem
   retention_enabled: true # <--- MUST BE TRUE
 
 limits_config:
