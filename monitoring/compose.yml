@@ -33,6 +33,7 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_SERVER_ROOT_URL=https://grafana.${DOMAIN}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
     networks:
       - dokploy-network
     labels:
