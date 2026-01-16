@@ -17,7 +17,10 @@ scrape_configs:
           - name: status
             values: [running]
     relabel_configs:
-      # 1. Get the container name (e.g., "monitoring-prometheus")
+      - source_labels: ["__meta_docker_container_id"]
+        target_label: "__path__"
+        replacement: "/var/lib/docker/containers/$1/*.log"
+        # 1. Get the container name (e.g., "monitoring-prometheus")
       - source_labels: ["__meta_docker_container_name"]
         regex: "/(.*)"
         target_label: "container"
