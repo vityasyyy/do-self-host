@@ -41,7 +41,7 @@ scrape_configs:
           format: RFC3339Nano
       # 5. Extract "level" (Info/Error) from the actual message text
       - regex:
-          expression: "(?i)(?P<level>trace|debug|info|warn|warning|error|fatal|panic)"
+          expression: "(?i)(?P<level>trace|trc|debug|dbg|info|inf|warn|warning|wrn|error|err|fatal|ft|panic)"
           source: log
       # 6. Turn that extracted "level" into a clickable label in Grafana
       - labels:
