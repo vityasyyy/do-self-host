@@ -13,6 +13,6 @@ jobs:
     steps:
       - name: Trigger Dokploy
         run: |
-          curl -X POST "${{ secrets.DOKPLOY_MONITORING_WEBHOOK }}" \
+          curl -X POST "${{ secrets.DOKPLOY_MONITORING_WEBHOOK }}?branch=main" \
           -H "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
           -H "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
