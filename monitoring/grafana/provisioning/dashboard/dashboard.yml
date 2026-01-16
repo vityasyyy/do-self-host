@@ -1,11 +1,12 @@
 apiVersion: 1
 
 providers:
-  - name: "Default"
+  - name: "My Dashbord"
     orgId: 1
     folder: "Dashboard"
     type: file
     disableDeletion: false
-    updateIntervalSeconds: 10
+    updateIntervalSeconds: 300
     options:
-      path: /etc/grafana/provisioning/dashboards
+      path: /etc/grafana/provisioning/dashboards/
+      foldersFromFilesStructure: true
