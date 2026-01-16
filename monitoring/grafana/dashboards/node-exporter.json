@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 1,
+  "id": 2,
   "links": [
     {
       "icon": "external link",
@@ -126,7 +126,7 @@
         "text": {},
         "valueMode": "color"
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -244,7 +244,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -328,7 +328,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -402,7 +402,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -486,7 +486,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -569,7 +569,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -645,7 +645,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -725,7 +725,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -805,7 +805,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -889,7 +889,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -970,7 +970,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -1156,7 +1156,7 @@
           "sort": "desc"
         }
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -1372,7 +1372,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -1516,7 +1516,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -1622,7 +1622,7 @@
           "sort": "none"
         }
       },
-      "pluginVersion": "12.3.0",
+      "pluginVersion": "12.3.1",
       "targets": [
         {
           "editorMode": "code",
@@ -15663,8 +15663,8 @@
     "list": [
       {
         "current": {
-          "text": "prometheus",
-          "value": "af6k4ye5sy29sd"
+          "text": "Prometheus",
+          "value": "PBFA97CFB590B2093"
         },
         "includeAll": false,
         "label": "Datasource",
@@ -15700,8 +15700,8 @@
       },
       {
         "current": {
-          "text": "8369a8059663",
-          "value": "8369a8059663"
+          "text": "5927cc3d7d37",
+          "value": "5927cc3d7d37"
         },
         "datasource": {
           "type": "prometheus",
