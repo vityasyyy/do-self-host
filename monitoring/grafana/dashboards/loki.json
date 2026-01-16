@@ -385,7 +385,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Docker Observability (PLG)",
-  "uid": "docker-observability-plg",
+  "uid": "docker",
   "version": 1,
   "weekStart": ""
 }
