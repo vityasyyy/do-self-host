@@ -1,0 +1,18 @@
+name: Deploy Monitoring Stack
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "monitoring/**" # <--- ONLY triggers if files in this folder change
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Dokploy
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_MONITORING_WEBHOOK }}" \
+          -H "CF-Access-Client-Id: ${{ secrets.CF_ACCESS_CLIENT_ID }}" \
+          -H "CF-Access-Client-Secret: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}" \
