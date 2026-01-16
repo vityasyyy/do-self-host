@@ -28,7 +28,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/ale
+      - ./grafana/alerting:/etc/grafana/provisioning/alerting
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
