@@ -3,7 +3,7 @@ apiVersion: 1
 groups:
   - orgId: 1
     name: "Production Alerts"
-    folder: "General"
+    folder: "Docker Alert"
     interval: 1m
     rules:
       # ALERT 1: High CPU (Prometheus)
