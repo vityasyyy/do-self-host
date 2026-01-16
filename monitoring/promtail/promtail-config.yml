@@ -17,32 +17,27 @@ scrape_configs:
           - name: status
             values: [running]
     relabel_configs:
+      # THIS SECTION ENSURES YOU CAN QUERY BY CONTAINER NAME
       - source_labels: ["__meta_docker_container_id"]
         target_label: "__path__"
         replacement: "/var/lib/docker/containers/$1/*.log"
-        # 1. Get the container name (e.g., "monitoring-prometheus")
       - source_labels: ["__meta_docker_container_name"]
         regex: "/(.*)"
         target_label: "container"
-      # 2. Get the stream (stdout vs stderr)
       - source_labels: ["__meta_docker_container_log_stream"]
         target_label: "stream"
 
     pipeline_stages:
-      # 3. Unwrap the Docker JSON wrapper
+      # We keep this to unwrap the Docker JSON file format
       - json:
           expressions:
             log: log
             stream: stream
             time: time
-      # 4. Use the timestamp from the log line (not the time Promtail read it)
+      # We keep this so Grafana shows the real log time, not the time Promtail read it
       - timestamp:
           source: time
           format: RFC3339Nano
-      # 5. Extract "level" (Info/Error) from the actual message text
-      - regex:
-          expression: "(?i)(?P<level>trace|trc|debug|dbg|info|inf|warn|warning|wrn|error|err|fatal|ft|panic)"
+      # We output the clean log line. No regex parsing, no level extraction.
+      - output:
           source: log
-      # 6. Turn that extracted "level" into a clickable label in Grafana
-      - labels:
-          level:
