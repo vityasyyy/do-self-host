@@ -34,6 +34,7 @@ jobs:
       TF_VAR_maintenance_mode: ${{ secrets.MAINTENANCE_MODE == 'true' }}
       TF_VAR_rotate_tunnel_token: ${{ secrets.ROTATE_TUNNEL_TOKEN == 'true' }}
       TF_VAR_ssh_pub_path: "../ansible/ssh_key.pub"
+      TF_VAR_grafana_password: ${{ secrets.GRAFANA_PASSWORD }}
       ANSIBLE_HOST_KEY_CHECKING: "False"
       CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
       CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}

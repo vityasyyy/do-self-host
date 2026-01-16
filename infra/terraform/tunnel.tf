@@ -217,9 +217,9 @@ resource "local_file" "ansible_inventory" {
   content  = <<EOT
 [dokploy_servers]
 %{if var.maintenance_mode}
-${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_port=2222 ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id} cf_tunnel_token=${base64encode(jsonencode({ a = var.cloudflare_account_id, t = cloudflare_zero_trust_tunnel_cloudflared.main.id, s = base64encode(random_password.tunnel_secret.result) }))}
+${digitalocean_droplet.server.ipv4_address} ansible_user=root ansible_port=2222 ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id} cf_tunnel_token=${base64encode(jsonencode({ a = var.cloudflare_account_id, t = cloudflare_zero_trust_tunnel_cloudflared.main.id, s = base64encode(random_password.tunnel_secret.result) }))} domain=${var.domain} grafana_password=${var.grafana_password}
 %{else}
-ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id} cf_tunnel_token=${base64encode(jsonencode({ a = var.cloudflare_account_id, t = cloudflare_zero_trust_tunnel_cloudflared.main.id, s = base64encode(random_password.tunnel_secret.result) }))}
+ssh.${var.domain} ansible_user=root ansible_ssh_private_key_file=${replace(var.ssh_pub_path, ".pub", "")} cf_tunnel_id=${cloudflare_zero_trust_tunnel_cloudflared.main.id} cf_tunnel_token=${base64encode(jsonencode({ a = var.cloudflare_account_id, t = cloudflare_zero_trust_tunnel_cloudflared.main.id, s = base64encode(random_password.tunnel_secret.result) }))} domain=${var.domain} grafana_password=${var.grafana_password}
 %{endif}
 EOT
   filename = "${path.module}/../ansible/inventory.ini"

@@ -15,5 +15,8 @@
     - name: Deploy Monitoring Stack
       community.docker.docker_compose_v2:
         project_src: /opt/monitoring
+        env:
+          DOMAIN: "{{ domain }}"
+          GRAFANA_PASSWORD: "{{ grafana_password }}"
         state: present
         pull: always # Ensures you always get the latest images

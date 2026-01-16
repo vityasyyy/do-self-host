@@ -46,3 +46,8 @@ variable "rotate_tunnel_token" {
   type    = bool
   default = false
 }
+
+variable "grafana_password" {
+  type      = string
+  sensitive = true
+}
