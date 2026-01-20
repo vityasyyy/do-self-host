@@ -9,10 +9,7 @@ contactPoints:
         settings:
           url: "${DISCORD_WEBHOOK_URL}"
           message: |
-            {{ range .Alerts }}
-            **{{ .Status }}**: {{ .Labels.alertname }}
-            **Summary**: {{ .Annotations.summary }}
-            {{ end }}
+            {{ template "default.message" . }}
 
 policies:
   - orgId: 1
@@ -21,12 +18,15 @@ policies:
     group_by: ["alertname", "container", "instance"]
 
 groups:
+  # ===============================
+  # INFRASTRUCTURE (Prometheus)
+  # ===============================
   - orgId: 1
     name: Container-Lifecycle
     folder: Infrastructure
     interval: 1m
     rules:
-      # --- CONTAINER MISSING ---
+      # ... (Your Prometheus rules were fine, but keeping them consistent) ...
       - uid: container_missing
         title: "Container Missing: {{ $labels.name }}"
         condition: C
@@ -46,10 +46,9 @@ groups:
               type: threshold
               conditions: [{ evaluator: { type: gt, params: [0] } }]
 
-      # --- RESTART LOOP ---
       - uid: container_restart_loop
         title: "Container Restart Loop: {{ $labels.name }}"
-        condition: A
+        condition: C # Changed to C to use Threshold properly if you wanted, but A is okay for PromQL often. C is safer.
         for: 2m
         noDataState: OK
         execErrState: Error
@@ -58,9 +57,20 @@ groups:
             datasourceUid: Prometheus
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              expr: changes(container_start_time_seconds{name!=""}[10m]) > 3
+              expr: changes(container_start_time_seconds{name!=""}[10m])
+          - refId: B # Reduce Step
+            datasourceUid: __expr__
+            model:
+              expression: A
+              reducer: last
+              type: reduce
+          - refId: C # Threshold Step
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions: [{ evaluator: { type: gt, params: [3] } }]
 
-      # --- SERVICE DOWN ---
       - uid: service_down
         title: "Service Down: {{ $labels.instance }}"
         condition: C
@@ -72,14 +82,23 @@ groups:
             datasourceUid: Prometheus
             relativeTimeRange: { from: 300, to: 0 }
             model:
-              expr: up{job!=""} == 0
-          - refId: C
+              expr: up{job!=""}
+          - refId: B
             datasourceUid: __expr__
             model:
               expression: A
+              reducer: last
+              type: reduce
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
               type: threshold
-              conditions: [{ evaluator: { type: gt, params: [0] } }]
+              conditions: [{ evaluator: { type: lt, params: [1] } }] # Alert if < 1 (i.e. 0)
 
+  # ===============================
+  # BACKEND LOGS (Loki) - FIXED
+  # ===============================
   - orgId: 1
     name: Backend-Logs
     folder: Applications
@@ -88,33 +107,69 @@ groups:
       # --- PANIC ---
       - uid: backend_panic
         title: "Backend Panic: {{ $labels.container }}"
-        condition: A
+        condition: C # Must point to the Threshold expression
         for: 0m
         noDataState: OK
         execErrState: Error
         data:
+          # 1. QUERY: Just get the count.
+          # Added '!~ "query="' to stop self-triggering on Loki logs.
           - refId: A
             datasourceUid: Loki
             relativeTimeRange: { from: 300, to: 0 }
             model:
               expr: |
                 sum by (container) (
-                  count_over_time({container=~".+"} |~ "(?i)panic|fatal"[1m])
-                ) > 0
+                  count_over_time({container=~".+"} |~ "(?i)panic|fatal" !~ "query=" [1m])
+                )
+
+          # 2. REDUCE: Turn the time series into a single number (Total count)
+          # This fixes "frame cannot uniquely be identified"
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              reducer: sum # Sum up all counts in the window (or max)
+              type: reduce
+
+          # 3. THRESHOLD: Fire if count > 0
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
 
       # --- ERROR SPIKE ---
       - uid: backend_error_spike
         title: "High Error Rate: {{ $labels.container }}"
-        condition: A
+        condition: C
         for: 2m
         noDataState: OK
         execErrState: Error
         data:
+          # 1. QUERY: Raw count, excluding query logs
           - refId: A
             datasourceUid: Loki
             relativeTimeRange: { from: 300, to: 0 }
             model:
               expr: |
                 sum by (container) (
-                  count_over_time({container=~".+"} |~ "(?i)error"[1m])
-                ) > 10
+                  count_over_time({container=~".+"} |~ "(?i)error" !~ "query=" [1m])
+                )
+
+          # 2. REDUCE
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              expression: A
+              reducer: mean # Average errors per minute over the time range
+              type: reduce
+
+          # 3. THRESHOLD: Fire if average > 10
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
+              type: threshold
+              conditions: [{ evaluator: { type: gt, params: [10] } }]
