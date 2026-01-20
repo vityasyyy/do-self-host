@@ -63,11 +63,20 @@ groups:
               from: 300
               to: 0
             model:
-              expr: changes(container_start_time_seconds{name!=""}[5m])
-          - refId: C
+              expr: |
+                sum by (name) (
+                  changes(container_start_time_seconds{name!=""}[5m])
+                )
+          - refId: B
             datasourceUid: __expr__
             model:
               expression: A
+              type: reduce
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
               type: threshold
               conditions:
                 - evaluator:
@@ -133,7 +142,6 @@ groups:
                     type: gt
                     params: [10]
 
-      # --- PANIC / FATAL ---
       - uid: backend_panic
         title: "Backend Panic / Fatal"
         condition: C
@@ -151,21 +159,26 @@ groups:
                     {container=~".+"} |~ "(?i)panic|fatal"[1m]
                   )
                 )
-          - refId: C
+          - refId: B
             datasourceUid: __expr__
             model:
               expression: A
+              type: reduce
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
               type: threshold
               conditions:
                 - evaluator:
                     type: gt
                     params: [0]
-                    #
         # === ERROR CODE REGRESSION ===
-      - uid: backend_auth_error_spike
-        title: "Backend Internal Server Error Spike"
+      - uid: backend_error_spike
+        title: "Backend Error Spike"
         condition: C
-        for: 3m
+        for: 2m
         data:
           - refId: A
             datasourceUid: Loki
@@ -176,15 +189,21 @@ groups:
               expr: |
                 sum(
                   count_over_time(
-                    {container=~".+", status="500"}[1m]
+                    {container=~".+"} |~ "(?i)error"[1m]
                   )
                 )
-          - refId: C
+          - refId: B
             datasourceUid: __expr__
             model:
               expression: A
+              type: reduce
+              reducer: last
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: B
               type: threshold
               conditions:
                 - evaluator:
                     type: gt
-                    params: [50]
+                    params: [10]
