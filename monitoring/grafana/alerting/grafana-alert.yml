@@ -19,180 +19,160 @@ policies:
     receiver: Discord-Channel
     group_by: ["alertname", "container"]
 
-# 3. Alert Rules
 groups:
   - orgId: 1
-    name: Docker-Alerts
+    name: Container-Lifecycle
     folder: Infrastructure
-    interval: 1m
+    interval: 30s
     rules:
-      # --- ALERT 1: HIGH CPU USAGE (> 80%) ---
-      - uid: container_cpu_high
-        title: "High CPU Usage: {{ $labels.name }}"
-        condition: C
-        for: 1m
-        data:
-          # Step A: Query Prometheus
-          - refId: A
-            datasourceUid: Prometheus
-            relativeTimeRange: { from: 600, to: 0 }
-            model:
-              expr: sum(rate(container_cpu_usage_seconds_total{name!=""}[1m])) by (name) * 100
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-
-          # Step B: Reduce to a single number (Last value)
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              refId: B
-              expression: A
-              type: reduce
-              reducer: last
-              settings:
-                mode: dropNN
-
-          # Step C: Threshold Check (> 80)
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              refId: C
-              expression: B
-              type: threshold
-              conditions:
-                - evaluator: { params: [80], type: gt }
-
-      # --- ALERT 2: HIGH MEMORY USAGE (> 1GB) ---
-      - uid: container_memory_high
-        title: "High Memory Usage: {{ $labels.name }}"
+      # === CONTAINER EXITED ===
+      - uid: container_exited
+        title: "Container Exited: {{ $labels.name }}"
         condition: C
         for: 1m
         data:
           - refId: A
             datasourceUid: Prometheus
-            relativeTimeRange: { from: 600, to: 0 }
             model:
-              expr: sum(container_memory_usage_bytes{name!=""}) by (name)
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
+              expr: container_last_seen{name!=""}
           - refId: B
             datasourceUid: __expr__
             model:
-              refId: B
               expression: A
               type: reduce
               reducer: last
-              settings:
-                mode: dropNN
           - refId: C
             datasourceUid: __expr__
             model:
-              refId: C
               expression: B
               type: threshold
               conditions:
-                - evaluator: { params: [1073741824], type: gt }
+                - evaluator:
+                    type: lt
+                    params: [60]
 
-      # --- ALERT 3: ERROR LOGS DETECTED (Loki) ---
-      - uid: app_error_logs
-        title: "Error Logs Detected: {{ $labels.container }}"
-        condition: C
-        for: 0m
-        data:
-          - refId: A
-            datasourceUid: Loki
-            relativeTimeRange: { from: 300, to: 0 }
-            model:
-              expr: sum by (container) (count_over_time({job="docker"} |~ "(?i)error|fatal|panic" [1m]))
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              refId: B
-              expression: A
-              type: reduce
-              reducer: last
-              settings:
-                mode: dropNN
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              refId: C
-              expression: B
-              type: threshold
-              conditions:
-                - evaluator: { params: [0], type: gt }
-      # --- ALERT 4: CONTAINER RESTARTING (CrashLoop / Failed Deployment) ---
-      # Triggers if a container restarts more than 2 times in 5 minutes.
-      - uid: container_restarts
+      # === RESTART LOOP ===
+      - uid: container_restart_loop
         title: "Container Restart Loop: {{ $labels.name }}"
         condition: C
         for: 1m
         data:
           - refId: A
             datasourceUid: Prometheus
-            relativeTimeRange: { from: 300, to: 0 } # Look back 5 minutes
             model:
-              # 'changes' counts how many times the value changed.
-              # If start_time changes, the container restarted.
               expr: changes(container_start_time_seconds{name!=""}[5m])
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
           - refId: B
             datasourceUid: __expr__
             model:
-              refId: B
               expression: A
               type: reduce
               reducer: last
-              settings:
-                mode: dropNN
           - refId: C
             datasourceUid: __expr__
             model:
-              refId: C
               expression: B
               type: threshold
               conditions:
-                # Alert if restarts > 2
-                - evaluator: { params: [2], type: gt }
+                - evaluator:
+                    type: gt
+                    params: [3]
 
-      # --- ALERT 5: CRITICAL SERVICE DOWN ---
-      # Triggers if a target (like cAdvisor, Node Exporter, or your App) is unreachable
+      # === SERVICE DOWN ===
       - uid: service_down
-        title: "Service Unreachable: {{ $labels.instance }}"
+        title: "Service Down: {{ $labels.instance }}"
         condition: C
         for: 1m
         data:
           - refId: A
             datasourceUid: Prometheus
-            relativeTimeRange: { from: 600, to: 0 }
             model:
-              # 'up' is a built-in metric. 1 = UP, 0 = DOWN.
-              expr: up
-              intervalMs: 1000
-              maxDataPoints: 43200
-              refId: A
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              refId: B
-              expression: A
-              type: reduce
-              reducer: last
-              settings:
-                mode: dropNN
+              expr: up == 0
           - refId: C
             datasourceUid: __expr__
             model:
-              refId: C
-              expression: B
+              expression: A
               type: threshold
               conditions:
-                # Alert if value is 0 (DOWN)
-                - evaluator: { params: [0], type: eq }
+                - evaluator:
+                    type: gt
+                    params: [0]
+
+  - orgId: 1
+    name: Backend-Logs
+    folder: Applications
+    interval: 1m
+    rules:
+      # === ERROR RATE SPIKE ===
+      - uid: backend_error_spike
+        title: "Backend Error Spike"
+        condition: C
+        for: 2m
+        data:
+          - refId: A
+            datasourceUid: Loki
+            model:
+              expr: |
+                sum(
+                  count_over_time(
+                    {container=~"*.*", level="error"}[1m]
+                  )
+                ) or vector(0)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [10]
+
+      # === PANIC / FATAL ===
+      - uid: backend_panic
+        title: "Backend Panic / Fatal"
+        condition: C
+        for: 0m
+        data:
+          - refId: A
+            datasourceUid: Loki
+            model:
+              expr: |
+                sum(
+                  count_over_time(
+                    {container=~"*.*"} |~ "(?i)panic|fatal"[1m]
+                  )
+                )
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+
+      # === ERROR CODE REGRESSION ===
+      - uid: backend_auth_error_spike
+        title: "Backend Internal Server Error Spike"
+        condition: C
+        for: 3m
+        data:
+          - refId: A
+            datasourceUid: Loki
+            model:
+              expr: |
+                sum(
+                  count_over_time(
+                    {container=~"*.*", status="500"}[1m]
+                  )
+                )
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              expression: A
+              type: threshold
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [50]
