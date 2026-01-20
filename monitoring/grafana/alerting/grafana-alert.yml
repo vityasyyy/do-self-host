@@ -169,6 +169,9 @@ groups:
         data:
           - refId: A
             datasourceUid: Loki
+            relativeTimeRange:
+              from: 300
+              to: 0
             model:
               expr: |
                 sum(
