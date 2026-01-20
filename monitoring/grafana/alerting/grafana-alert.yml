@@ -1,6 +1,5 @@
 apiVersion: 1
 
-# 1. Contact Points (Discord)
 contactPoints:
   - orgId: 1
     name: Discord-Channel
@@ -12,7 +11,6 @@ contactPoints:
           message: |
             {{ template "default.message" . }}
 
-# 2. Notification Policies
 policies:
   - orgId: 1
     name: Default-Policy
@@ -20,12 +18,15 @@ policies:
     group_by: ["alertname", "container"]
 
 groups:
+  # ===============================
+  # CONTAINER LIFECYCLE
+  # ===============================
   - orgId: 1
     name: Container-Lifecycle
     folder: Infrastructure
     interval: 30s
     rules:
-      # === CONTAINER EXITED ===
+      # --- CONTAINER EXITED (REAL EXIT ONLY) ---
       - uid: container_exited
         title: "Container Exited: {{ $labels.name }}"
         condition: C
@@ -33,25 +34,24 @@ groups:
         data:
           - refId: A
             datasourceUid: Prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
             model:
-              expr: container_last_seen{name!=""}
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              expression: A
-              type: reduce
-              reducer: last
+              expr: |
+                time() - container_last_seen{name!=""} > 60
+                and time() - container_start_time_seconds{name!=""} > 300
           - refId: C
             datasourceUid: __expr__
             model:
-              expression: B
+              expression: A
               type: threshold
               conditions:
                 - evaluator:
-                    type: lt
-                    params: [60]
+                    type: gt
+                    params: [0]
 
-      # === RESTART LOOP ===
+      # --- RESTART LOOP ---
       - uid: container_restart_loop
         title: "Container Restart Loop: {{ $labels.name }}"
         condition: C
@@ -59,25 +59,22 @@ groups:
         data:
           - refId: A
             datasourceUid: Prometheus
+            relativeTimeRange:
+              from: 300
+              to: 0
             model:
               expr: changes(container_start_time_seconds{name!=""}[5m])
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              expression: A
-              type: reduce
-              reducer: last
           - refId: C
             datasourceUid: __expr__
             model:
-              expression: B
+              expression: A
               type: threshold
               conditions:
                 - evaluator:
                     type: gt
                     params: [3]
 
-      # === SERVICE DOWN ===
+      # --- SERVICE DOWN ---
       - uid: service_down
         title: "Service Down: {{ $labels.instance }}"
         condition: C
@@ -85,6 +82,9 @@ groups:
         data:
           - refId: A
             datasourceUid: Prometheus
+            relativeTimeRange:
+              from: 120
+              to: 0
             model:
               expr: up == 0
           - refId: C
@@ -97,12 +97,15 @@ groups:
                     type: gt
                     params: [0]
 
+  # ===============================
+  # BACKEND LOG ALERTS
+  # ===============================
   - orgId: 1
     name: Backend-Logs
     folder: Applications
     interval: 1m
     rules:
-      # === ERROR RATE SPIKE ===
+      # --- ERROR SPIKE ---
       - uid: backend_error_spike
         title: "Backend Error Spike"
         condition: C
@@ -110,13 +113,16 @@ groups:
         data:
           - refId: A
             datasourceUid: Loki
+            relativeTimeRange:
+              from: 300
+              to: 0
             model:
               expr: |
                 sum(
                   count_over_time(
-                    {container=~"*.*", level="error"}[1m]
+                    {container=~".+"} |~ "(?i)error"[1m]
                   )
-                ) or vector(0)
+                )
           - refId: C
             datasourceUid: __expr__
             model:
@@ -127,7 +133,7 @@ groups:
                     type: gt
                     params: [10]
 
-      # === PANIC / FATAL ===
+      # --- PANIC / FATAL ---
       - uid: backend_panic
         title: "Backend Panic / Fatal"
         condition: C
@@ -135,11 +141,14 @@ groups:
         data:
           - refId: A
             datasourceUid: Loki
+            relativeTimeRange:
+              from: 300
+              to: 0
             model:
               expr: |
                 sum(
                   count_over_time(
-                    {container=~"*.*"} |~ "(?i)panic|fatal"[1m]
+                    {container=~".+"} |~ "(?i)panic|fatal"[1m]
                   )
                 )
           - refId: C
@@ -151,8 +160,8 @@ groups:
                 - evaluator:
                     type: gt
                     params: [0]
-
-      # === ERROR CODE REGRESSION ===
+                    #
+        # === ERROR CODE REGRESSION ===
       - uid: backend_auth_error_spike
         title: "Backend Internal Server Error Spike"
         condition: C
