@@ -173,7 +173,7 @@ groups:
               expr: |
                 sum(
                   count_over_time(
-                    {container=~"*.*", status="500"}[1m]
+                    {container=~".+", status="500"}[1m]
                   )
                 )
           - refId: C
