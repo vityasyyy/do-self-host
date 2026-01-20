@@ -8,7 +8,6 @@ contactPoints:
         type: discord
         settings:
           url: "${DISCORD_WEBHOOK_URL}"
-          # Simple template to ensure the alert is readable
           message: |
             {{ range .Alerts }}
             **{{ .Status }}**: {{ .Labels.alertname }}
@@ -22,26 +21,23 @@ policies:
     group_by: ["alertname", "container", "instance"]
 
 groups:
-  # ===============================
-  # INFRASTRUCTURE (Prometheus)
-  # ===============================
   - orgId: 1
     name: Container-Lifecycle
     folder: Infrastructure
     interval: 1m
     rules:
-      # --- CONTAINER MISSING (Better than Exited) ---
-      # Alerts if a container that should be there is gone for > 1m
+      # --- CONTAINER MISSING ---
       - uid: container_missing
         title: "Container Missing: {{ $labels.name }}"
         condition: C
         for: 1m
+        noDataState: OK
+        execErrState: Error
         data:
           - refId: A
             datasourceUid: Prometheus
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              # Checks if a container was seen 10m ago but is null now
               expr: absent(container_last_seen{name!=""})
           - refId: C
             datasourceUid: __expr__
@@ -54,13 +50,14 @@ groups:
       - uid: container_restart_loop
         title: "Container Restart Loop: {{ $labels.name }}"
         condition: A
-        for: 2m # Increased 'for' to avoid flapping on single restarts
+        for: 2m
+        noDataState: OK
+        execErrState: Error
         data:
           - refId: A
             datasourceUid: Prometheus
             relativeTimeRange: { from: 600, to: 0 }
             model:
-              # > 3 restarts in 10 minutes is a definite loop
               expr: changes(container_start_time_seconds{name!=""}[10m]) > 3
 
       # --- SERVICE DOWN ---
@@ -68,12 +65,14 @@ groups:
         title: "Service Down: {{ $labels.instance }}"
         condition: C
         for: 2m
+        noDataState: OK
+        execErrState: Error
         data:
           - refId: A
             datasourceUid: Prometheus
             relativeTimeRange: { from: 300, to: 0 }
             model:
-              expr: up{job!=""} == 0 # Ensure we only check configured jobs
+              expr: up{job!=""} == 0
           - refId: C
             datasourceUid: __expr__
             model:
@@ -81,25 +80,23 @@ groups:
               type: threshold
               conditions: [{ evaluator: { type: gt, params: [0] } }]
 
-  # ===============================
-  # BACKEND LOGS (Loki)
-  # ===============================
   - orgId: 1
     name: Backend-Logs
     folder: Applications
     interval: 1m
     rules:
-      # --- PANIC / FATAL DETECTED ---
+      # --- PANIC ---
       - uid: backend_panic
         title: "Backend Panic: {{ $labels.container }}"
         condition: A
         for: 0m
+        noDataState: OK
+        execErrState: Error
         data:
           - refId: A
             datasourceUid: Loki
             relativeTimeRange: { from: 300, to: 0 }
             model:
-              # Sum by container so we know WHICH app panicked
               expr: |
                 sum by (container) (
                   count_over_time({container=~".+"} |~ "(?i)panic|fatal"[1m])
@@ -110,12 +107,13 @@ groups:
         title: "High Error Rate: {{ $labels.container }}"
         condition: A
         for: 2m
+        noDataState: OK
+        execErrState: Error
         data:
           - refId: A
             datasourceUid: Loki
             relativeTimeRange: { from: 300, to: 0 }
             model:
-              # Only alert if > 10 errors per minute sustained for 2 minutes
               expr: |
                 sum by (container) (
                   count_over_time({container=~".+"} |~ "(?i)error"[1m])
