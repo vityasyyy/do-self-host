@@ -114,34 +114,6 @@ groups:
     folder: Applications
     interval: 1m
     rules:
-      # --- ERROR SPIKE ---
-      - uid: backend_error_spike
-        title: "Backend Error Spike"
-        condition: C
-        for: 2m
-        data:
-          - refId: A
-            datasourceUid: Loki
-            relativeTimeRange:
-              from: 300
-              to: 0
-            model:
-              expr: |
-                sum(
-                  count_over_time(
-                    {container=~".+"} |~ "(?i)error"[1m]
-                  )
-                )
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              expression: A
-              type: threshold
-              conditions:
-                - evaluator:
-                    type: gt
-                    params: [10]
-
       - uid: backend_panic
         title: "Backend Panic / Fatal"
         condition: C
