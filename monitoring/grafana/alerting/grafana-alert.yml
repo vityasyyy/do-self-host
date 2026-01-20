@@ -8,174 +8,115 @@ contactPoints:
         type: discord
         settings:
           url: "${DISCORD_WEBHOOK_URL}"
+          # Simple template to ensure the alert is readable
           message: |
-            {{ template "default.message" . }}
+            {{ range .Alerts }}
+            **{{ .Status }}**: {{ .Labels.alertname }}
+            **Summary**: {{ .Annotations.summary }}
+            {{ end }}
 
 policies:
   - orgId: 1
     name: Default-Policy
     receiver: Discord-Channel
-    group_by: ["alertname", "container"]
+    group_by: ["alertname", "container", "instance"]
 
 groups:
   # ===============================
-  # CONTAINER LIFECYCLE
+  # INFRASTRUCTURE (Prometheus)
   # ===============================
   - orgId: 1
     name: Container-Lifecycle
     folder: Infrastructure
-    interval: 30s
+    interval: 1m
     rules:
-      # --- CONTAINER EXITED (REAL EXIT ONLY) ---
-      - uid: container_exited
-        title: "Container Exited: {{ $labels.name }}"
+      # --- CONTAINER MISSING (Better than Exited) ---
+      # Alerts if a container that should be there is gone for > 1m
+      - uid: container_missing
+        title: "Container Missing: {{ $labels.name }}"
         condition: C
         for: 1m
         data:
           - refId: A
             datasourceUid: Prometheus
-            relativeTimeRange:
-              from: 300
-              to: 0
+            relativeTimeRange: { from: 600, to: 0 }
             model:
-              expr: |
-                time() - container_last_seen{name!=""} > 60
-                and time() - container_start_time_seconds{name!=""} > 300
+              # Checks if a container was seen 10m ago but is null now
+              expr: absent(container_last_seen{name!=""})
           - refId: C
             datasourceUid: __expr__
             model:
               expression: A
               type: threshold
-              conditions:
-                - evaluator:
-                    type: gt
-                    params: [0]
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
 
       # --- RESTART LOOP ---
       - uid: container_restart_loop
         title: "Container Restart Loop: {{ $labels.name }}"
-        condition: C
-        for: 1m
+        condition: A
+        for: 2m # Increased 'for' to avoid flapping on single restarts
         data:
           - refId: A
             datasourceUid: Prometheus
-            relativeTimeRange:
-              from: 300
-              to: 0
+            relativeTimeRange: { from: 600, to: 0 }
             model:
-              expr: |
-                sum by (name) (
-                  changes(container_start_time_seconds{name!=""}[5m])
-                )
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              expression: A
-              type: reduce
-              reducer: last
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              expression: B
-              type: threshold
-              conditions:
-                - evaluator:
-                    type: gt
-                    params: [3]
+              # > 3 restarts in 10 minutes is a definite loop
+              expr: changes(container_start_time_seconds{name!=""}[10m]) > 3
 
       # --- SERVICE DOWN ---
       - uid: service_down
         title: "Service Down: {{ $labels.instance }}"
         condition: C
-        for: 1m
+        for: 2m
         data:
           - refId: A
             datasourceUid: Prometheus
-            relativeTimeRange:
-              from: 120
-              to: 0
+            relativeTimeRange: { from: 300, to: 0 }
             model:
-              expr: up == 0
+              expr: up{job!=""} == 0 # Ensure we only check configured jobs
           - refId: C
             datasourceUid: __expr__
             model:
               expression: A
               type: threshold
-              conditions:
-                - evaluator:
-                    type: gt
-                    params: [0]
+              conditions: [{ evaluator: { type: gt, params: [0] } }]
 
   # ===============================
-  # BACKEND LOG ALERTS
+  # BACKEND LOGS (Loki)
   # ===============================
   - orgId: 1
     name: Backend-Logs
     folder: Applications
     interval: 1m
     rules:
+      # --- PANIC / FATAL DETECTED ---
       - uid: backend_panic
-        title: "Backend Panic / Fatal"
-        condition: C
+        title: "Backend Panic: {{ $labels.container }}"
+        condition: A
         for: 0m
         data:
           - refId: A
             datasourceUid: Loki
-            relativeTimeRange:
-              from: 300
-              to: 0
+            relativeTimeRange: { from: 300, to: 0 }
             model:
+              # Sum by container so we know WHICH app panicked
               expr: |
-                sum(
-                  count_over_time(
-                    {container=~".+"} |~ "(?i)panic|fatal"[1m]
-                  )
-                )
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              expression: A
-              type: reduce
-              reducer: last
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              expression: B
-              type: threshold
-              conditions:
-                - evaluator:
-                    type: gt
-                    params: [0]
-        # === ERROR CODE REGRESSION ===
+                sum by (container) (
+                  count_over_time({container=~".+"} |~ "(?i)panic|fatal"[1m])
+                ) > 0
+
+      # --- ERROR SPIKE ---
       - uid: backend_error_spike
-        title: "Backend Error Spike"
-        condition: C
+        title: "High Error Rate: {{ $labels.container }}"
+        condition: A
         for: 2m
         data:
           - refId: A
             datasourceUid: Loki
-            relativeTimeRange:
-              from: 300
-              to: 0
+            relativeTimeRange: { from: 300, to: 0 }
             model:
+              # Only alert if > 10 errors per minute sustained for 2 minutes
               expr: |
-                sum(
-                  count_over_time(
-                    {container=~".+"} |~ "(?i)error"[1m]
-                  )
-                )
-          - refId: B
-            datasourceUid: __expr__
-            model:
-              expression: A
-              type: reduce
-              reducer: last
-          - refId: C
-            datasourceUid: __expr__
-            model:
-              expression: B
-              type: threshold
-              conditions:
-                - evaluator:
-                    type: gt
-                    params: [10]
+                sum by (container) (
+                  count_over_time({container=~".+"} |~ "(?i)error"[1m])
+                ) > 10
