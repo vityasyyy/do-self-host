@@ -18,15 +18,11 @@ policies:
     group_by: ["alertname", "container", "instance"]
 
 groups:
-  # ===============================
-  # INFRASTRUCTURE (Prometheus)
-  # ===============================
   - orgId: 1
     name: Container-Lifecycle
     folder: Infrastructure
     interval: 1m
     rules:
-      # ... (Your Prometheus rules were fine, but keeping them consistent) ...
       - uid: container_missing
         title: "Container Missing: {{ $labels.name }}"
         condition: C
@@ -48,7 +44,7 @@ groups:
 
       - uid: container_restart_loop
         title: "Container Restart Loop: {{ $labels.name }}"
-        condition: C # Changed to C to use Threshold properly if you wanted, but A is okay for PromQL often. C is safer.
+        condition: C
         for: 2m
         noDataState: OK
         execErrState: Error
@@ -96,9 +92,6 @@ groups:
               type: threshold
               conditions: [{ evaluator: { type: lt, params: [1] } }] # Alert if < 1 (i.e. 0)
 
-  # ===============================
-  # BACKEND LOGS (Loki) - FIXED
-  # ===============================
   - orgId: 1
     name: Backend-Logs
     folder: Applications
@@ -112,27 +105,24 @@ groups:
         noDataState: OK
         execErrState: Error
         data:
-          # 1. QUERY: Just get the count.
-          # Added '!~ "query="' to stop self-triggering on Loki logs.
           - refId: A
             datasourceUid: Loki
             relativeTimeRange: { from: 300, to: 0 }
             model:
               expr: |
                 sum by (container) (
-                  count_over_time({container=~".+"} |~ "(?i)panic|fatal" !~ "query=" [1m])
+                  count_over_time(
+                    {container!~"monitoring-grafana", level=~"error|fatal"}
+                    |~ "(?i)panic|fatal error"
+                    [1m]
+                  )
                 )
-
-          # 2. REDUCE: Turn the time series into a single number (Total count)
-          # This fixes "frame cannot uniquely be identified"
           - refId: B
             datasourceUid: __expr__
             model:
               expression: A
               reducer: sum # Sum up all counts in the window (or max)
               type: reduce
-
-          # 3. THRESHOLD: Fire if count > 0
           - refId: C
             datasourceUid: __expr__
             model:
@@ -148,7 +138,6 @@ groups:
         noDataState: OK
         execErrState: Error
         data:
-          # 1. QUERY: Raw count, excluding query logs
           - refId: A
             datasourceUid: Loki
             relativeTimeRange: { from: 300, to: 0 }
@@ -157,16 +146,12 @@ groups:
                 sum by (container) (
                   count_over_time({container=~".+"} |~ "(?i)error" !~ "query=" [1m])
                 )
-
-          # 2. REDUCE
           - refId: B
             datasourceUid: __expr__
             model:
               expression: A
               reducer: mean # Average errors per minute over the time range
               type: reduce
-
-          # 3. THRESHOLD: Fire if average > 10
           - refId: C
             datasourceUid: __expr__
             model:
