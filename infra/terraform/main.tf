@@ -42,4 +42,3 @@ resource "digitalocean_firewall" "strict" {
 # trigger someting
 # trigger something
 # trigger domain
-# domain change
